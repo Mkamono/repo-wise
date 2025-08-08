@@ -1,0 +1,30 @@
+name: Minimal OAuth Proxy
+
+on:
+  repository_dispatch:
+    types: [oauth_exchange]
+
+jobs:
+  oauth-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: OAuth Token Exchange
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RESULT_ID="${{ github.event.client_payload.result_id }}"
+          CLIENT_ID="${{ github.event.client_payload.client_id }}"
+          CODE="${{ github.event.client_payload.code }}"
+          CODE_VERIFIER="${{ github.event.client_payload.code_verifier }}"
+          
+          # GitHub OAuth token exchange
+          RESPONSE=$(curl -s -X POST \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "client_id=${CLIENT_ID}&code=${CODE}&code_verifier=${CODE_VERIFIER}" \
+            https://github.com/login/oauth/access_token)
+          
+          echo "OAuth response: $RESPONSE"
+          
+          # Create Gist with result
+          gh gist create --public --filename "oauth_result.json" --desc "$RESULT_ID" - <<< "$RESPONSE"
