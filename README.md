@@ -1,132 +1,117 @@
-# Document App - GitHub OAuth + Actions Integration
+# GitHub Repository Viewer
 
-AI-first document management application using GitHub as backend with client-side OAuth authentication.
+Simple Go web application for viewing your GitHub repositories using GitHub Device Flow authentication.
+
+## Features
+
+- 🔒 **GitHub Device Flow authentication** (no Client Secret required!)
+- 📦 **Single binary deployment**
+- 🌐 **Clean web interface**
+- 📚 **View your repository list** with descriptions
+- 🔒 **Support for both public and private repositories**
+- ⚡ **No callback URL setup needed**
 
 ## Quick Start
 
-### 1. GitHub OAuth App Setup
+**🎉 No configuration needed! Client ID is embedded.**
 
-1. Go to GitHub Settings → Developer settings → OAuth Apps → New OAuth App
-2. Fill in the form:
-   - **Application name**: Document App Test (任意の名前)
-   - **Homepage URL**: `http://localhost:3000` (テスト用) または実際のURL
-   - **Authorization callback URL**: `http://localhost:3000` (テスト用) または実際のURL
+### 1. Run the Application
 
-### 2. Personal Access Token Setup
-
-GitHub Actions Dispatchを使用するために、以下のスコープを持つPersonal Access Tokenが必要です：
-- `repo` (repository dispatch用)
-- `gist` (結果保存用)
-
-1. GitHub Settings → Developer settings → Personal access tokens → Generate new token
-2. 上記スコープを選択して作成
-
-### 3. Repository Settings
-
-1. Actions を有効にする (Settings → Actions → Allow all actions)
-2. 以下のファイルを適切な場所に配置：
-   - `.github/workflows/minimal-oauth-proxy.yml`
-   - `github-action-minimal/minimal-oauth-client.js`
-   - `github-action-minimal/usage-example.html`
-   - `pkce-test.html`
-
-### 4. Configuration
-
-各ファイルの設定箇所を更新：
-
-#### `github-action-minimal/usage-example.html`
-```javascript
-window.GITHUB_OWNER = 'your-github-username';  // 実際のユーザー名に変更
-window.GITHUB_REPO = 'your-repo-name';         // 実際のリポジトリ名に変更
+```bash
+go run main.go
 ```
 
-#### `pkce-test.html` (コード内で設定)
-```javascript
-const oauth = new MinimalGitHubOAuth(
-    'your-github-username',  // 実際のユーザー名に変更
-    'your-repo-name',        // 実際のリポジトリ名に変更
-    localStorage.getItem('github_pat')
-);
+**Or build a binary:**
+```bash
+go build -o github-repo-viewer main.go
+./github-repo-viewer
 ```
 
-## Testing
+### 2. Open in Browser
 
-### Option 1: Simple PKCE Test (`pkce-test.html`)
+Visit http://localhost:8080 and click "GitHubで認証開始"
 
-1. ブラウザで `pkce-test.html` を開く
-2. Client ID を入力
-3. Personal Access Token をLocalStorageに設定 (`github_pat` key)
-4. 「GitHub でログイン」をクリック
-5. 認証後、「GitHub API テスト」をクリックして動作確認
+### 3. GitHub Device Flow Authentication
 
-### Option 2: Minimal Proxy Test (`github-action-minimal/usage-example.html`)
+1. Click "GitHubで認証開始"
+2. A user code will be displayed (例: `WDJB-MJHT`)
+3. Click the link to open GitHub authentication page
+4. Enter the user code on GitHub
+5. Authorize the app
+6. Return to the application - authentication will complete automatically!
 
-1. ブラウザで `github-action-minimal/usage-example.html` を開く
-2. GitHub Personal Access Token を入力
-3. OAuth App Client ID を入力
-4. 「最小限プロキシでOAuth開始」をクリック
+## Configuration
 
-## Architecture
+**Client ID**: `Ov23li47XYtQ5ucc3uAf` (embedded)
 
-### OAuth Flow with GitHub Actions
+### Optional Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | 8080 |
+
+### Example
+
+```bash
+export PORT="3000"  # Optional: change port
+go run main.go
+```
+
+## Architecture (Device Flow)
 
 ```
-1. Client → GitHub OAuth (PKCE flow)
-2. GitHub → Callback with authorization code
-3. Client → GitHub Actions Dispatch (repository_dispatch)
-4. Actions → GitHub OAuth token exchange
-5. Actions → Save result to Gist
-6. Client → Poll for Gist result
-7. Client → Receive access token
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Web Browser   │ ←→ │   Go Server     │ ←→ │  GitHub API     │
+│                 │    │                 │    │                 │
+│ - Repository    │    │ - Device Code   │    │ - Device Flow   │
+│   List Display  │    │   Request       │    │ - User Info     │  
+│ - User Code     │    │ - Token Polling │    │ - Repositories  │
+│   Display       │    │ - API Proxy     │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              ↓
+                    ┌─────────────────┐
+                    │ GitHub Web UI   │
+                    │                 │
+                    │ - User enters   │
+                    │   device code   │
+                    │ - Authorization │
+                    └─────────────────┘
 ```
-
-### Performance Benefits
-
-| Method | Execution Time | Cost | Dependencies |
-|--------|----------------|------|--------------|
-| Cloud Functions | 1-3s | Paid | Server |
-| Full GitHub Actions | 30-60s | Free | Many |
-| **Minimal Proxy** | **5-10s** | **Free** | **None** |
 
 ## Files Structure
 
 ```
 /
-├── .github/workflows/
-│   └── minimal-oauth-proxy.yml     # GitHub Actions OAuth proxy
-├── github-action-minimal/
-│   ├── README.md                   # Japanese documentation
-│   ├── minimal-oauth-client.js     # OAuth client with Actions dispatch  
-│   └── usage-example.html          # Example usage
-├── pkce-test.html                  # Simple OAuth PKCE test
-├── doc.md                          # Core concepts (Japanese)
-├── implementation.md               # Implementation details (Japanese)
-├── setup-guide.md                  # OAuth App setup guide (Japanese)
-└── README.md                       # This file
+├── main.go              # Main Go application (Client ID embedded)
+├── go.mod              # Go module definition
+├── README.md           # This file
+├── CLAUDE.md           # Claude Code guidance
+├── setup-guide.md      # Detailed setup guide
+├── doc.md              # Original design concepts  
+├── implementation.md   # Implementation notes
+└── LICENSE             # License file
+```
+
+## Development
+
+### Build for different platforms
+
+```bash
+# macOS
+GOOS=darwin GOARCH=amd64 go build -o github-repo-viewer-mac main.go
+
+# Linux
+GOOS=linux GOARCH=amd64 go build -o github-repo-viewer-linux main.go
+
+# Windows  
+GOOS=windows GOARCH=amd64 go build -o github-repo-viewer.exe main.go
 ```
 
 ## Security Notes
 
-- Personal Access Tokens should have minimal required scopes
-- Gists are deleted immediately after OAuth result retrieval  
-- Request IDs provide randomness for security
-- No client secrets required (PKCE flow)
-
-## Troubleshooting
-
-### Workflow not triggered
-```bash
-# Check repository_dispatch permissions
-gh api repos/owner/repo/dispatches --method POST --field event_type=test
-```
-
-### Gist creation failed
-```bash
-# Check gist permissions
-gh auth status
-```
-
-### Timeout errors
-- Check GitHub Actions queue status
-- Adjust polling interval (currently 1s)
-- Check workflow logs in Actions tab
+- **Device Flow**: No client secrets required or stored
+- **Server-side token management**: Access tokens never exposed to browser
+- **Memory-only storage**: Tokens are stored in memory only (lost on restart)
+- **No callback vulnerabilities**: No redirect URI validation needed
+- **User controls authorization**: Users authenticate directly with GitHub
+- **HTTPS recommended** for production use

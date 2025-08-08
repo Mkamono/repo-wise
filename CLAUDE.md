@@ -4,88 +4,130 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This repository contains documentation and prototypes for building a team-oriented document management application with AI-first design. The project focuses on:
+GitHub Repository Viewer - A simple Go web application for viewing GitHub repositories using Device Flow authentication.
 
-- **AI-first document management** - Using AI to automatically categorize, organize, and maintain documentation
-- **GitHub as backend** - Leveraging GitHub API, repositories, and Issues for data storage and workflow management
-- **Client-side OAuth authentication** - PKCE (Proof Key for Code Exchange) flow for secure GitHub authentication without server-side components
+**Key Features:**
+- GitHub Device Flow authentication (no Client Secret required)
+- Single binary deployment  
+- Web interface for repository browsing
+- Support for both public and private repositories
 
 ## Architecture
 
 ### Core Components
 
-1. **Document Storage**: Markdown files in GitHub repositories with YAML frontmatter for metadata
-2. **Authentication**: GitHub OAuth with PKCE for client-side authentication
-3. **GitHub Actions Integration**: Minimal proxy for OAuth token exchange using GitHub Actions and Gists
-4. **Quality Management**: GitHub Issues as notification queue for document maintenance tasks
+1. **Go HTTP Server**: Serves web interface and handles API requests
+2. **Device Flow Authentication**: GitHub OAuth without Client Secret
+3. **GitHub API Proxy**: Server-side GitHub API calls
+4. **In-memory Token Storage**: Access tokens stored in memory only
 
 ### File Structure
 
 ```
 /
-├── doc.md                    # Core concept and design philosophy
-├── implementation.md         # Technical implementation details and architecture decisions
-├── setup-guide.md           # GitHub OAuth App setup instructions
-├── pkce-test.html           # OAuth PKCE authentication testing interface
-└── github-action-minimal/   # Minimal GitHub Actions OAuth proxy
-    ├── README.md            # Japanese documentation for minimal proxy approach
-    ├── minimal-oauth-client.js  # OAuth client with GitHub Actions dispatch
-    └── usage-example.html   # Example usage of the OAuth client
+├── main.go              # Main Go application with embedded HTML
+├── go.mod              # Go module definition
+├── run.sh              # Convenience run script with validation
+├── README.md           # Main documentation
+├── CLAUDE.md           # This file
+└── setup-guide.md      # Detailed setup instructions
 ```
 
-## Key Design Patterns
+## Authentication Flow (Device Flow)
 
-### Document Structure
-Documents use YAML frontmatter for metadata:
-```yaml
----
-title: "Document Title"
-type: "decision-log" | "requirements" | "research"
-created: "YYYY-MM-DD"
-summary: "Brief summary for AI categorization"
-tags: ["tag1", "tag2"]
----
+GitHub Device Flow provides secure authentication without Client Secret:
+
+1. **Device Code Request**: App requests device code from GitHub
+2. **User Code Display**: App shows user code (e.g., `WDJB-MJHT`) and GitHub URL
+3. **User Authorization**: User visits GitHub, enters code, and authorizes
+4. **Token Polling**: App polls GitHub API for access token
+5. **API Access**: Use access token for GitHub API calls
+
+### Flow Diagram
+```
+App → GitHub: Request device code
+App ← GitHub: Device code + User code + Verification URL
+App → User: Display user code and GitHub URL
+User → GitHub: Enter code and authorize
+App → GitHub: Poll for access token (until success)
+App ← GitHub: Access token
+App → GitHub API: Use access token for repository data
 ```
 
-### File Naming Convention
-- `decision-logs/YYYY-MM-DD_project-name_topic.md`
-- `requirements/YYYY-MM-DD_feature-name_requirements.md`
-- `research/YYYY-MM-DD_topic_research-report.md`
+## Development Commands
 
-### GitHub Integration
-- **Issues as Tasks**: Quality check notifications are GitHub Issues with labels like `doc-quality-check`
-- **API-first**: All operations use GitHub API for repository interaction
-- **Actions Dispatch**: `repository_dispatch` events trigger minimal OAuth proxy workflows
+### Environment Setup
+```bash
+export GITHUB_CLIENT_ID="your_client_id_here"
+```
 
-## Authentication Flow
+### Running the Application
+```bash
+# Using run script (recommended)
+./run.sh
 
-The project implements GitHub OAuth with PKCE:
+# Direct Go execution
+go run main.go
 
-1. Generate `code_verifier` (random string) and `code_challenge` (SHA256 hash)
-2. Redirect to GitHub OAuth with `code_challenge`
-3. Exchange authorization `code` + `code_verifier` for access token
-4. Use access token for GitHub API calls
+# Build binary
+go build -o github-repo-viewer main.go
+```
 
-## Testing OAuth Integration
+### GitHub OAuth App Configuration
+- Go to: https://github.com/settings/developers
+- Create OAuth App (not GitHub App)
+- Application name: `Repository Viewer` (cannot start with "GitHub")  
+- Homepage URL: `http://localhost:8080`
+- Callback URL: `http://localhost:8080/callback` (required but not used)
 
-To test the OAuth flow:
-1. Open `pkce-test.html` in browser
-2. Create GitHub OAuth App with appropriate callback URLs
-3. Enter Client ID and test authentication
-4. Use "GitHub API テスト" to verify token functionality
+## Key Implementation Details
 
-## GitHub Actions Minimal Proxy
+### HTTP Handlers
+- `GET /` - Main page with embedded HTML template
+- `GET /auth/device` - Initiate Device Flow (returns JSON)
+- `POST /auth/poll` - Poll for access token (JSON request/response)  
+- `GET /repos` - Get user repositories (JSON API)
+- `GET /logout` - Clear access token and redirect
 
-The `github-action-minimal/` contains a ultra-fast OAuth proxy using GitHub Actions:
-- Reduces OAuth exchange time from 30-60s (full CI) to 5-10s
-- Uses `repository_dispatch` + Gists for result storage
-- No dependencies - just curl and gh commands
-- Requires Personal Access Token with `repo` and `gist` scopes
+### Template Variables
+The main HTML template uses Go template variables:
+- `{{.IsAuthenticated}}` - Boolean authentication status
+- `{{.User}}` - User information struct
+- `{{.Repositories}}` - Array of repository objects
+- `{{.Port}}` - Server port for configuration display
 
-## Development Notes
+### GitHub API Integration
+- `GET /user` - Fetch authenticated user information
+- `GET /user/repos` - Fetch user repositories (20 most recent)
+- All API calls include `Authorization: token {access_token}` header
+- Proper error handling for API rate limits and failures
 
-- All text content is in Japanese
-- No build system or package.json - pure HTML/JS/CSS
-- Client-side only implementation (no server required)
-- GitHub Pages compatible
-- Security: Gists are deleted immediately after OAuth result retrieval
+## Security Considerations
+
+- **No Client Secret**: Device Flow eliminates Client Secret storage/exposure
+- **Server-side tokens**: Access tokens never sent to browser
+- **Memory-only storage**: Tokens lost on restart (no persistent storage)
+- **Direct GitHub authentication**: Users authenticate directly with GitHub
+- **No callback vulnerabilities**: No redirect URI validation needed
+
+## Troubleshooting
+
+### Common Issues
+- Missing `GITHUB_CLIENT_ID`: Run script will show clear error message
+- Invalid Client ID: Device flow will fail with authentication error
+- Network issues: Check GitHub API status and connectivity
+
+### Build Issues
+- Ensure Go 1.19+ is installed
+- All dependencies are in standard library (no external deps)
+- Cross-platform builds supported with GOOS/GOARCH
+
+## Testing Notes
+
+Device Flow testing requires:
+1. Valid GitHub OAuth App with Client ID
+2. Active network connection to GitHub
+3. Web browser for user authentication
+4. Manual authorization step (cannot be automated)
+
+The polling mechanism has built-in timeout and retry logic with user feedback.
