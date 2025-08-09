@@ -4,130 +4,144 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GitHub Repository Viewer - A simple Go web application for viewing GitHub repositories using Device Flow authentication.
+GitHub Repository Viewer - A Go web application that displays GitHub repositories and local knowledge documents using Device Flow authentication.
 
 **Key Features:**
 - GitHub Device Flow authentication (no Client Secret required)
-- Single binary deployment  
+- Single binary deployment with embedded HTML template
 - Web interface for repository browsing
+- Local knowledge document viewer from `knowledge/` directory
 - Support for both public and private repositories
-
-## Architecture
-
-### Core Components
-
-1. **Go HTTP Server**: Serves web interface and handles API requests
-2. **Device Flow Authentication**: GitHub OAuth without Client Secret
-3. **GitHub API Proxy**: Server-side GitHub API calls
-4. **In-memory Token Storage**: Access tokens stored in memory only
-
-### File Structure
-
-```
-/
-├── main.go              # Main Go application with embedded HTML
-├── go.mod              # Go module definition
-├── run.sh              # Convenience run script with validation
-├── README.md           # Main documentation
-├── CLAUDE.md           # This file
-└── setup-guide.md      # Detailed setup instructions
-```
-
-## Authentication Flow (Device Flow)
-
-GitHub Device Flow provides secure authentication without Client Secret:
-
-1. **Device Code Request**: App requests device code from GitHub
-2. **User Code Display**: App shows user code (e.g., `WDJB-MJHT`) and GitHub URL
-3. **User Authorization**: User visits GitHub, enters code, and authorizes
-4. **Token Polling**: App polls GitHub API for access token
-5. **API Access**: Use access token for GitHub API calls
-
-### Flow Diagram
-```
-App → GitHub: Request device code
-App ← GitHub: Device code + User code + Verification URL
-App → User: Display user code and GitHub URL
-User → GitHub: Enter code and authorize
-App → GitHub: Poll for access token (until success)
-App ← GitHub: Access token
-App → GitHub API: Use access token for repository data
-```
 
 ## Development Commands
 
 ### Environment Setup
+Client ID is embedded in the application (`Ov23li47XYtQ5ucc3uAf`), but can be overridden:
 ```bash
-export GITHUB_CLIENT_ID="your_client_id_here"
+export GITHUB_CLIENT_ID="your_client_id_here"  # Optional override
+export PORT="8080"  # Optional port change
 ```
 
 ### Running the Application
 ```bash
-# Using run script (recommended)
-./run.sh
-
-# Direct Go execution
+# Direct Go execution (primary method)
 go run main.go
 
 # Build binary
 go build -o github-repo-viewer main.go
+
+# Cross-platform builds
+GOOS=darwin GOARCH=amd64 go build -o github-repo-viewer-mac main.go
+GOOS=linux GOARCH=amd64 go build -o github-repo-viewer-linux main.go
+GOOS=windows GOARCH=amd64 go build -o github-repo-viewer.exe main.go
 ```
 
-### GitHub OAuth App Configuration
-- Go to: https://github.com/settings/developers
-- Create OAuth App (not GitHub App)
-- Application name: `Repository Viewer` (cannot start with "GitHub")  
-- Homepage URL: `http://localhost:8080`
-- Callback URL: `http://localhost:8080/callback` (required but not used)
+### Dependencies
+- Go 1.24.5+ required
+- No external dependencies (uses only Go standard library)
+- Module name: `github-oauth-viewer`
 
-## Key Implementation Details
+## Architecture
+
+### Single-File Design
+The entire application is contained in `main.go` (549 lines) with:
+- Embedded HTML template (lines 88-260)
+- HTTP handlers for authentication and API proxy
+- GitHub Device Flow implementation
+- Local document serving from `knowledge/` directory
+
+### Core Components
+
+1. **HTTP Server**: Serves embedded HTML and handles API requests
+2. **Device Flow Authentication**: OAuth without Client Secret
+3. **GitHub API Proxy**: Server-side calls to GitHub API
+4. **In-memory Token Storage**: Access tokens stored only in memory
+5. **Knowledge Document System**: Serves Markdown files from `knowledge/` directory
 
 ### HTTP Handlers
-- `GET /` - Main page with embedded HTML template
-- `GET /auth/device` - Initiate Device Flow (returns JSON)
-- `POST /auth/poll` - Poll for access token (JSON request/response)  
-- `GET /repos` - Get user repositories (JSON API)
-- `GET /logout` - Clear access token and redirect
+- `GET /` - Main page with embedded HTML template (homeHandler)
+- `GET /auth/device` - Initiate Device Flow, returns JSON (deviceAuthHandler)
+- `POST /auth/poll` - Poll for access token, JSON request/response (pollTokenHandler)
+- `GET /repos` - Get user repositories JSON API (reposHandler)
+- `GET /documents` - List knowledge documents (documentsHandler)
+- `GET /document/{path}` - Serve individual knowledge document (documentHandler)
+- `GET /logout` - Clear access token and redirect (logoutHandler)
 
-### Template Variables
-The main HTML template uses Go template variables:
-- `{{.IsAuthenticated}}` - Boolean authentication status
-- `{{.User}}` - User information struct
-- `{{.Repositories}}` - Array of repository objects
-- `{{.Port}}` - Server port for configuration display
+### Key Data Structures
+```go
+type Config struct {
+    ClientID string  // GitHub OAuth Client ID
+    Port     string  // Server port
+}
+
+type Repository struct {
+    Name        string `json:"name"`
+    FullName    string `json:"full_name"`
+    Description string `json:"description"`
+    Private     bool   `json:"private"`
+    HTMLURL     string `json:"html_url"`
+}
+
+type Document struct {
+    Path         string    `json:"path"`
+    Title        string    `json:"title"`
+    RelativePath string    `json:"relative_path"`
+    ModTime      time.Time `json:"mod_time"`
+    Size         int64     `json:"size"`
+    IsDir        bool      `json:"is_dir"`
+}
+```
 
 ### GitHub API Integration
-- `GET /user` - Fetch authenticated user information
-- `GET /user/repos` - Fetch user repositories (20 most recent)
-- All API calls include `Authorization: token {access_token}` header
-- Proper error handling for API rate limits and failures
+- Fetches user info via `GET /user`
+- Fetches repositories via `GET /user/repos?sort=updated&per_page=20`
+- Uses `Authorization: token {access_token}` header
+- Proper error handling for API rate limits
+
+### Knowledge Document System
+- Scans `knowledge/` directory for `.md` files
+- Serves documents as plain text at `/document/{relativePath}`
+- Security: Path validation prevents directory traversal
+- File metadata displayed: title, path, modification time
+
+## Authentication Flow (Device Flow)
+
+1. **Device Code Request**: App requests device/user codes from GitHub
+2. **User Code Display**: Shows user code (e.g., `WDJB-MJHT`) and verification URL
+3. **User Authorization**: User visits GitHub, enters code, authorizes app
+4. **Token Polling**: App polls GitHub for access token with exponential backoff
+5. **API Access**: Use access token for GitHub API calls
+
+Critical implementation details:
+- Uses GitHub's recommended polling interval from device code response
+- Maximum 60 polling attempts (10 minutes timeout)
+- Handles `authorization_pending` and `slow_down` responses appropriately
+- JavaScript-based polling on frontend with status updates
 
 ## Security Considerations
 
-- **No Client Secret**: Device Flow eliminates Client Secret storage/exposure
-- **Server-side tokens**: Access tokens never sent to browser
-- **Memory-only storage**: Tokens lost on restart (no persistent storage)
-- **Direct GitHub authentication**: Users authenticate directly with GitHub
+- **No Client Secret**: Device Flow eliminates secret storage/exposure risk
+- **Server-side tokens**: Access tokens never transmitted to browser
+- **Memory-only storage**: Tokens lost on restart (no persistence)
+- **Direct GitHub auth**: Users authenticate directly with GitHub
+- **Path validation**: Knowledge document serving prevents directory traversal
 - **No callback vulnerabilities**: No redirect URI validation needed
 
-## Troubleshooting
+## Testing and Development Notes
 
-### Common Issues
-- Missing `GITHUB_CLIENT_ID`: Run script will show clear error message
-- Invalid Client ID: Device flow will fail with authentication error
-- Network issues: Check GitHub API status and connectivity
+- Device Flow requires manual user interaction (cannot be fully automated)
+- Testing requires valid GitHub OAuth App and network connectivity
+- Application starts immediately with embedded Client ID
+- Knowledge documents can be added to `knowledge/` directory without restart
+- Japanese interface text (easily modifiable in embedded template)
 
-### Build Issues
-- Ensure Go 1.19+ is installed
-- All dependencies are in standard library (no external deps)
-- Cross-platform builds supported with GOOS/GOARCH
-
-## Testing Notes
-
-Device Flow testing requires:
-1. Valid GitHub OAuth App with Client ID
-2. Active network connection to GitHub
-3. Web browser for user authentication
-4. Manual authorization step (cannot be automated)
-
-The polling mechanism has built-in timeout and retry logic with user feedback.
+## File Structure Context
+```
+/
+├── main.go              # Single-file application (549 lines)
+├── go.mod              # Module definition (Go 1.24.5)
+├── README.md           # User documentation
+├── setup-guide.md      # Detailed setup instructions
+├── CLAUDE.md           # This file
+└── knowledge/          # Directory for Markdown documents (optional)
+```
