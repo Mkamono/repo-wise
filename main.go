@@ -10,14 +10,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"repo-wise/src/config"
 	"strings"
 	"time"
 )
-
-type Config struct {
-	ClientID string
-	Port     string
-}
 
 type Repository struct {
 	Name        string `json:"name"`
@@ -57,15 +53,12 @@ type Document struct {
 	IsDir        bool      `json:"is_dir"`
 }
 
-var config Config
 var accessToken string
+var cfg = config.NewConfig()
 
 func main() {
 	// 設定を初期化
-	config = Config{
-		ClientID: "Ov23li47XYtQ5ucc3uAf", // GitHub OAuth App Client ID (public)
-		Port:     getEnv("PORT", "8080"),
-	}
+	cfg := config.NewConfig()
 
 	// ルート設定
 	http.HandleFunc("/", homeHandler)
@@ -76,12 +69,12 @@ func main() {
 	http.HandleFunc("/document/", documentHandler)
 	http.HandleFunc("/logout", logoutHandler)
 
-	fmt.Printf("🚀 GitHub Repository Viewer starting on http://localhost:%s\n", config.Port)
-	fmt.Printf("📱 Client ID: %s\n", config.ClientID)
+	fmt.Printf("🚀 GitHub Repository Viewer starting on http://localhost:%s\n", cfg.Port)
+	fmt.Printf("📱 Client ID: %s\n", cfg.ClientID)
 	fmt.Printf("🔒 Authentication: GitHub Device Flow\n")
 	fmt.Printf("✨ Ready to use - no configuration needed!\n")
-	
-	log.Fatal(http.ListenAndServe(":"+config.Port, nil))
+
+	log.Fatal(http.ListenAndServe(":"+fmt.Sprintf("%d", cfg.Port), nil))
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +106,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 </head>
 <body>
     <h1>GitHub Repository Viewer</h1>
-    
+
     {{if .IsAuthenticated}}
         <div class="container">
             <div class="user-info">
@@ -124,7 +117,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                     <a href="/logout">ログアウト</a>
                 </div>
             </div>
-            
+
             <h3>リポジトリ一覧</h3>
             <div class="repo-list">
                 {{range .Repositories}}
@@ -140,7 +133,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                 {{end}}
             </div>
         </div>
-        
+
         <div class="container">
             <h3>📚 Knowledge Documents</h3>
             <div class="repo-list">
@@ -159,7 +152,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             <h3>GitHub Device Flow認証</h3>
             <p>GitHubリポジトリを表示するには、まずGitHub認証を行ってください。</p>
             <button onclick="startDeviceAuth()">GitHubで認証開始</button>
-            
+
             <div id="deviceAuthSection" style="display: none;" class="device-auth">
                 <h4>GitHub認証手順</h4>
                 <p>1. 以下のリンクをクリックして、GitHubの認証ページを開いてください：</p>
@@ -170,7 +163,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                 <div id="pollStatus"></div>
             </div>
         </div>
-        
+
         <div class="container">
             <h3>設定方法</h3>
             <p><strong>GitHub OAuth App設定 (Device Flow):</strong></p>
@@ -191,21 +184,21 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
         try {
             const response = await fetch('/auth/device');
             const data = await response.json();
-            
+
             if (data.error) {
                 document.getElementById('pollStatus').innerHTML = '<span class="error">エラー: ' + data.error + '</span>';
                 return;
             }
-            
+
             // UI更新
             document.getElementById('deviceAuthSection').style.display = 'block';
             document.getElementById('userCode').textContent = data.user_code;
             document.getElementById('authUrl').href = data.verification_uri;
-            
+
             // ポーリング開始（GitHubが指定した間隔を使用）
             console.log('Starting polling with GitHub specified interval:', data.interval + 's');
             pollForToken(data.device_code, data.interval);
-            
+
         } catch (error) {
             document.getElementById('pollStatus').innerHTML = '<span class="error">通信エラー: ' + error.message + '</span>';
         }
@@ -214,7 +207,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
     async function pollForToken(deviceCode, interval) {
         const maxAttempts = 60; // 最大60回（約10分）
         let attempts = 0;
-        
+
         const poll = async () => {
             try {
                 attempts++;
@@ -224,16 +217,16 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ device_code: deviceCode })
                 });
-                
+
                 const result = await response.json();
                 console.log('Poll result:', result);
-                
+
                 if (result.success) {
                     document.getElementById('pollStatus').innerHTML = '<span class="success">認証成功！ページを再読み込みします...</span>';
                     setTimeout(() => location.reload(), 1000);
                     return;
                 }
-                
+
                 if (result.error && (result.error.includes('authorization_pending') || result.error.includes('slow_down'))) {
                     document.getElementById('pollStatus').textContent = '認証待機中... (' + attempts + '/' + maxAttempts + ')';
                     if (attempts < maxAttempts) {
@@ -246,12 +239,12 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                     console.log('Unexpected error:', result.error);
                     document.getElementById('pollStatus').innerHTML = '<span class="error">認証エラー: ' + result.error + '</span>';
                 }
-                
+
             } catch (error) {
                 document.getElementById('pollStatus').innerHTML = '<span class="error">ポーリングエラー: ' + error.message + '</span>';
             }
         };
-        
+
         // 最初のポーリング
         setTimeout(poll, interval * 1000);
     }
@@ -260,7 +253,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 </html>`
 
 	t, _ := template.New("home").Parse(tmpl)
-	
+
 	data := struct {
 		IsAuthenticated bool
 		User            *User
@@ -269,7 +262,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		Port            string
 	}{
 		IsAuthenticated: accessToken != "",
-		Port:            config.Port,
+		Port:            fmt.Sprintf("%d", cfg.Port),
 	}
 
 	if accessToken != "" {
@@ -277,7 +270,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		if user, err := fetchUser(); err == nil {
 			data.User = user
 		}
-		
+
 		// リポジトリ一覧を取得
 		if repos, err := fetchRepositories(); err == nil {
 			data.Repositories = repos
@@ -366,19 +359,19 @@ func documentHandler(w http.ResponseWriter, r *http.Request) {
 	// URLから相対パスを取得
 	relativePath := strings.TrimPrefix(r.URL.Path, "/document/")
 	filePath := filepath.Join("knowledge", relativePath)
-	
+
 	// ファイルの存在確認とセキュリティチェック
 	if !strings.HasPrefix(filePath, "knowledge/") {
 		http.Error(w, "無効なパスです", http.StatusBadRequest)
 		return
 	}
-	
+
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		http.Error(w, "ファイルが見つかりません", http.StatusNotFound)
 		return
 	}
-	
+
 	// Markdownファイルをプレーンテキストとして表示
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Write(content)
@@ -391,7 +384,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 func requestDeviceCode() (*DeviceCodeResponse, error) {
 	data := url.Values{}
-	data.Set("client_id", config.ClientID)
+	data.Set("client_id", cfg.ClientID)
 	data.Set("scope", "repo user")
 
 	req, err := http.NewRequest("POST", "https://github.com/login/device/code", strings.NewReader(data.Encode()))
@@ -419,7 +412,7 @@ func requestDeviceCode() (*DeviceCodeResponse, error) {
 
 func pollDeviceToken(deviceCode string) (string, error) {
 	data := url.Values{}
-	data.Set("client_id", config.ClientID)
+	data.Set("client_id", cfg.ClientID)
 	data.Set("device_code", deviceCode)
 	data.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 
@@ -501,28 +494,28 @@ func fetchRepositories() ([]Repository, error) {
 func fetchDocuments() ([]Document, error) {
 	var documents []Document
 	knowledgeDir := "knowledge"
-	
+
 	err := filepath.WalkDir(knowledgeDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// .mdファイルのみ処理
 		if !d.IsDir() && strings.HasSuffix(path, ".md") {
 			info, err := d.Info()
 			if err != nil {
 				return err
 			}
-			
+
 			// 相対パスを取得（knowledge/ を除く）
 			relativePath, err := filepath.Rel(knowledgeDir, path)
 			if err != nil {
 				return err
 			}
-			
+
 			// ファイル名から拡張子を除いたものをタイトルとする
 			title := strings.TrimSuffix(filepath.Base(path), ".md")
-			
+
 			document := Document{
 				Path:         path,
 				Title:        title,
@@ -531,13 +524,13 @@ func fetchDocuments() ([]Document, error) {
 				Size:         info.Size(),
 				IsDir:        false,
 			}
-			
+
 			documents = append(documents, document)
 		}
-		
+
 		return nil
 	})
-	
+
 	return documents, err
 }
 

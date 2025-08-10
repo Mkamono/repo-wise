@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GitHub Repository Viewer - A Go web application that displays GitHub repositories and local knowledge documents using Device Flow authentication.
+GitHub Repository Viewer - A Go web application that displays GitHub repositories and local knowledge documents using GitHub Device Flow authentication.
 
 **Key Features:**
 - GitHub Device Flow authentication (no Client Secret required)
@@ -15,65 +15,73 @@ GitHub Repository Viewer - A Go web application that displays GitHub repositorie
 
 ## Development Commands
 
-### Environment Setup
-Client ID is embedded in the application (`Ov23li47XYtQ5ucc3uAf`), but can be overridden:
-```bash
-export GITHUB_CLIENT_ID="your_client_id_here"  # Optional override
-export PORT="8080"  # Optional port change
-```
-
 ### Running the Application
 ```bash
 # Direct Go execution (primary method)
 go run main.go
 
 # Build binary
-go build -o github-repo-viewer main.go
+go build -o repo-wise main.go
 
 # Cross-platform builds
-GOOS=darwin GOARCH=amd64 go build -o github-repo-viewer-mac main.go
-GOOS=linux GOARCH=amd64 go build -o github-repo-viewer-linux main.go
-GOOS=windows GOARCH=amd64 go build -o github-repo-viewer.exe main.go
+GOOS=darwin GOARCH=amd64 go build -o repo-wise-mac main.go
+GOOS=linux GOARCH=amd64 go build -o repo-wise-linux main.go
+GOOS=windows GOARCH=amd64 go build -o repo-wise.exe main.go
 ```
 
 ### Dependencies
 - Go 1.24.5+ required
-- No external dependencies (uses only Go standard library)
-- Module name: `github-oauth-viewer`
+- External dependency: `github.com/danielgtaylor/huma/v2` (currently unused but imported in handler package)
+- Module name: `repo-wise`
 
 ## Architecture
 
-### Single-File Design
-The entire application is contained in `main.go` (549 lines) with:
-- Embedded HTML template (lines 88-260)
+### Hybrid Architecture
+The application combines a main monolithic structure with modular components:
+
+**Main Application (main.go:543 lines):**
+- Embedded HTML template (lines 81-253)
 - HTTP handlers for authentication and API proxy
-- GitHub Device Flow implementation
+- GitHub Device Flow implementation 
 - Local document serving from `knowledge/` directory
+
+**Modular Components:**
+- `src/config/config.go`: Configuration management with embedded defaults
+- `src/handler/handler.go`: Huma v2 API handler setup (currently unused)
+- `src/infra/github/client.go`: GitHub client infrastructure (empty stub)
 
 ### Core Components
 
-1. **HTTP Server**: Serves embedded HTML and handles API requests
-2. **Device Flow Authentication**: OAuth without Client Secret
-3. **GitHub API Proxy**: Server-side calls to GitHub API
-4. **In-memory Token Storage**: Access tokens stored only in memory
-5. **Knowledge Document System**: Serves Markdown files from `knowledge/` directory
+1. **HTTP Server**: Standard library HTTP server with embedded HTML
+2. **Device Flow Authentication**: GitHub OAuth without Client Secret
+3. **GitHub API Proxy**: Server-side calls to GitHub API with token storage
+4. **In-memory Token Storage**: Access tokens stored only in memory (global variable)
+5. **Knowledge Document System**: File system-based Markdown serving
 
-### HTTP Handlers
-- `GET /` - Main page with embedded HTML template (homeHandler)
-- `GET /auth/device` - Initiate Device Flow, returns JSON (deviceAuthHandler)
-- `POST /auth/poll` - Poll for access token, JSON request/response (pollTokenHandler)
-- `GET /repos` - Get user repositories JSON API (reposHandler)
-- `GET /documents` - List knowledge documents (documentsHandler)
-- `GET /document/{path}` - Serve individual knowledge document (documentHandler)
-- `GET /logout` - Clear access token and redirect (logoutHandler)
+### Configuration System
+Configuration is handled through the `src/config` package:
+- **Default Client ID**: `Ov23li47XYtQ5ucc3uAf` (embedded in config)
+- **Default Port**: `10238` (not 8080 as documented elsewhere)
+- **Environment Override**: Not currently implemented for ClientID/Port
+
+### HTTP Handlers (main.go)
+- `GET /` - Main page with embedded HTML template (homeHandler:80)
+- `GET /auth/device` - Initiate Device Flow, returns JSON (deviceAuthHandler:288)
+- `POST /auth/poll` - Poll for access token, JSON request/response (pollTokenHandler:300)
+- `GET /repos` - Get user repositories JSON API (reposHandler:331)
+- `GET /documents` - List knowledge documents (documentsHandler:347)
+- `GET /document/{path}` - Serve individual knowledge document (documentHandler:358)
+- `GET /logout` - Clear access token and redirect (logoutHandler:380)
 
 ### Key Data Structures
 ```go
+// Config (src/config/config.go)
 type Config struct {
-    ClientID string  // GitHub OAuth Client ID
-    Port     string  // Server port
+    ClientID string // GitHub OAuth Client ID (public)
+    Port     int
 }
 
+// Main types (main.go)
 type Repository struct {
     Name        string `json:"name"`
     FullName    string `json:"full_name"`
@@ -93,55 +101,68 @@ type Document struct {
 ```
 
 ### GitHub API Integration
-- Fetches user info via `GET /user`
-- Fetches repositories via `GET /user/repos?sort=updated&per_page=20`
-- Uses `Authorization: token {access_token}` header
-- Proper error handling for API rate limits
+- **User Info**: `GET /user` (fetchUser:446)
+- **Repositories**: `GET /user/repos?sort=updated&per_page=20` (fetchRepositories:470)
+- **Authentication**: Bearer token in Authorization header
+- **Error Handling**: Basic JSON decoding error handling
 
-### Knowledge Document System
-- Scans `knowledge/` directory for `.md` files
+### Knowledge Document System (fetchDocuments:494)
+- Scans `knowledge/` directory recursively for `.md` files
 - Serves documents as plain text at `/document/{relativePath}`
-- Security: Path validation prevents directory traversal
-- File metadata displayed: title, path, modification time
+- Security: Path validation prevents directory traversal (line 364)
+- Title extraction from filename (without .md extension)
 
 ## Authentication Flow (Device Flow)
 
-1. **Device Code Request**: App requests device/user codes from GitHub
-2. **User Code Display**: Shows user code (e.g., `WDJB-MJHT`) and verification URL
-3. **User Authorization**: User visits GitHub, enters code, authorizes app
-4. **Token Polling**: App polls GitHub for access token with exponential backoff
-5. **API Access**: Use access token for GitHub API calls
+**Implementation Functions:**
+1. **Device Code Request** (requestDeviceCode:385): POST to `https://github.com/login/device/code`
+2. **Token Polling** (pollDeviceToken:413): POST to `https://github.com/login/oauth/access_token`
+3. **Frontend Polling** (JavaScript:207): Client-side polling with interval control
 
-Critical implementation details:
+**Critical Implementation Details:**
 - Uses GitHub's recommended polling interval from device code response
 - Maximum 60 polling attempts (10 minutes timeout)
 - Handles `authorization_pending` and `slow_down` responses appropriately
-- JavaScript-based polling on frontend with status updates
+- JavaScript-based polling with status updates (lines 207-250)
+- Access token stored in global variable `accessToken` (line 56)
 
-## Security Considerations
+## Development Workflow Considerations
 
-- **No Client Secret**: Device Flow eliminates secret storage/exposure risk
-- **Server-side tokens**: Access tokens never transmitted to browser
-- **Memory-only storage**: Tokens lost on restart (no persistence)
-- **Direct GitHub auth**: Users authenticate directly with GitHub
-- **Path validation**: Knowledge document serving prevents directory traversal
-- **No callback vulnerabilities**: No redirect URI validation needed
+**Current State:**
+- Application is in transition from single-file to modular structure
+- `src/handler/handler.go` contains Huma v2 setup but is not integrated with main.go
+- `src/infra/github/client.go` is an empty stub waiting for implementation
+- Configuration system is split between embedded defaults and external config package
 
-## Testing and Development Notes
-
-- Device Flow requires manual user interaction (cannot be fully automated)
-- Testing requires valid GitHub OAuth App and network connectivity
-- Application starts immediately with embedded Client ID
-- Knowledge documents can be added to `knowledge/` directory without restart
-- Japanese interface text (easily modifiable in embedded template)
+**Architectural Inconsistencies:**
+- Main application uses `cfg.Port` from config package but still calls `fmt.Sprintf("%d", cfg.Port)` (main.go:77)
+- Default port mismatch between code (10238) and documentation (8080)
+- Huma v2 dependency imported but not used in main application flow
+- Environment variable override mentioned in docs but not implemented
 
 ## File Structure Context
 ```
 /
-├── main.go              # Single-file application (549 lines)
-├── go.mod              # Module definition (Go 1.24.5)
-├── README.md           # User documentation
-├── setup-guide.md      # Detailed setup instructions
-├── CLAUDE.md           # This file
-└── knowledge/          # Directory for Markdown documents (optional)
+├── main.go                    # Main application (543 lines)
+├── go.mod                     # Module: repo-wise, Go 1.24.5
+├── go.sum                     # Dependency checksums
+├── src/
+│   ├── config/
+│   │   └── config.go          # Configuration with embedded defaults
+│   ├── handler/
+│   │   └── handler.go         # Huma v2 API setup (unused)
+│   └── infra/
+│       └── github/
+│           └── client.go      # Empty GitHub client stub
+├── knowledge/                 # Markdown documents directory
+│   ├── example1.md
+│   ├── example2.md
+│   └── directory/
+│       └── in-dir.md
+├── README.md                  # User documentation
+├── setup-guide.md             # Detailed setup instructions
+├── doc.md                     # Design concepts
+├── implementation.md          # Implementation notes
+├── LICENSE                    # License file
+└── CLAUDE.md                  # This file
 ```

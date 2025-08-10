@@ -1,0 +1,4 @@
+[tools]
+gcloud = "latest"
+go = "latest"
+terraform = "latest"
