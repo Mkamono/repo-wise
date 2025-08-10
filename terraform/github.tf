@@ -11,7 +11,7 @@ resource "github_actions_secret" "wif-sa-email" {
 resource "github_actions_secret" "wif-provider-id" {
   repository      = data.github_repository.app.id
   secret_name     = "WIF_PROVIDER_ID"
-  plaintext_value = google_iam_workload_identity_pool_provider.github.id
+  plaintext_value = google_iam_workload_identity_pool_provider.github.name
 }
 
 resource "github_actions_secret" "cloudsql-instance-name" {
