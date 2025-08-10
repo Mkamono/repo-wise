@@ -1,0 +1,20 @@
+name: "Notify Discord Action"
+description: "Notify Discord Action"
+
+inputs:
+    message:
+        description: "Message to send to Discord"
+        required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Notify Discord"
+      shell: bash
+      run: |
+        curl -H "Content-Type: application/json" \
+        -X POST \
+        -d '{
+          "content": "${{ inputs.message }}"
+        }' \
+        ${{ secrets.DISCORD_WEBHOOK_URL }}
