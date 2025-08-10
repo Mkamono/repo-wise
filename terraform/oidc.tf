@@ -26,3 +26,9 @@ resource "google_project_iam_member" "github_actions" {
   role    = "roles/editor"
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
+
+resource "google_service_account_iam_member" "github_actions_iam_workload_identity_user" {
+  service_account_id = google_service_account.github_actions.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/${local.repository}"
+}

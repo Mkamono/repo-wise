@@ -8,7 +8,10 @@
       "Bash(gcloud config:*)",
       "Bash(gcloud projects describe:*)",
       "Bash(gcloud billing projects describe:*)",
-      "Bash(gcloud billing accounts:*)"
+      "Bash(gcloud billing accounts:*)",
+      "Bash(gcloud projects get-iam-policy:*)",
+      "Bash(gcloud iam service-accounts get-iam-policy:*)",
+      "Bash(gcloud iam workload-identity-pools providers describe:*)"
     ],
     "deny": []
   }
