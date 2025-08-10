@@ -1,0 +1,32 @@
+name: Cloud SQL Start
+
+on:
+  workflow_dispatch:
+
+jobs:
+  start-cloudsql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER_ID }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT_EMAIL }}
+          token_format: 'access_token'
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      
+      - name: Start Cloud SQL instance
+        run: |
+          gcloud sql instances patch ${{ secrets.WIF_CLOUDSQL_INSTANCE_NAME }} \
+            --activation-policy=ALWAYS \
+            --quiet
+          echo "Cloud SQL instance ${{ secrets.WIF_CLOUDSQL_INSTANCE_NAME }} started"
