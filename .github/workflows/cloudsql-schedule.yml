@@ -36,4 +36,7 @@ jobs:
           gcloud sql instances patch ${{ secrets.WIF_CLOUDSQL_INSTANCE_NAME }} \
             --activation-policy=NEVER \
             --quiet
-          echo "Cloud SQL instance ${{ secrets.WIF_CLOUDSQL_INSTANCE_NAME }} stopped"
+
+      - uses: ./.github/workflows/notify-discord/action.yaml
+        with:
+          message: "Cloud SQL instance ${{ secrets.WIF_CLOUDSQL_INSTANCE_NAME }} stopped successfully"
