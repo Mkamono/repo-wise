@@ -4,165 +4,168 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GitHub Repository Viewer - A Go web application that displays GitHub repositories and local knowledge documents using GitHub Device Flow authentication.
+GitHub Repository Viewer - A React web application that displays GitHub repositories and local knowledge documents. Currently in transition from Go backend to full React frontend.
 
 **Key Features:**
-- GitHub Device Flow authentication (no Client Secret required)
-- Single binary deployment with embedded HTML template
-- Web interface for repository browsing
-- Local knowledge document viewer from `knowledge/` directory
-- Support for both public and private repositories
+- React 19 with TanStack Router for navigation
+- TypeScript for type safety
+- TailwindCSS v4 for styling
+- Vite for build tooling and development server
+- Biome for linting and formatting
 
 ## Development Commands
 
-### Running the Application
+### Frontend Development (src/)
 ```bash
-# Direct Go execution (primary method)
-go run main.go
+# Development server (port 3000)
+pnpm dev
 
-# Build binary
-go build -o repo-wise main.go
+# Build production bundle
+pnpm build
 
-# Cross-platform builds
-GOOS=darwin GOARCH=amd64 go build -o repo-wise-mac main.go
-GOOS=linux GOARCH=amd64 go build -o repo-wise-linux main.go
-GOOS=windows GOARCH=amd64 go build -o repo-wise.exe main.go
+# Preview production build
+pnpm serve
+
+# Run tests
+pnpm test
+
+# Linting and formatting
+pnpm lint
+pnpm format
+pnpm check
 ```
 
 ### Dependencies
-- Go 1.24.5+ required
-- External dependency: `github.com/danielgtaylor/huma/v2` (currently unused but imported in handler package)
-- Module name: `repo-wise`
+- Node.js with pnpm package manager
+- React 19 with modern concurrent features
+- TanStack Router v1.130+ for client-side routing
+- TypeScript 5.7+ for static typing
+- Vite 6.3+ for build tooling
 
 ## Architecture
 
-### Hybrid Architecture
-The application combines a main monolithic structure with modular components:
+### Frontend Architecture
+Modern React application built with contemporary tooling and patterns:
 
-**Main Application (main.go:543 lines):**
-- Embedded HTML template (lines 81-253)
-- HTTP handlers for authentication and API proxy
-- GitHub Device Flow implementation 
-- Local document serving from `knowledge/` directory
+**Core Stack:**
+- **React 19**: Latest stable version with concurrent features
+- **TanStack Router**: File-based routing with type-safe navigation
+- **TypeScript**: Strict type checking with modern ESNext modules
+- **Vite**: Fast development server and optimized production builds
+- **TailwindCSS v4**: Utility-first CSS framework with latest features
 
-**Modular Components:**
-- `src/config/config.go`: Configuration management with embedded defaults
-- `src/handler/handler.go`: Huma v2 API handler setup (currently unused)
-- `src/infra/github/client.go`: GitHub client infrastructure (empty stub)
+**Application Structure:**
+- `src/main.tsx`: Application entry point with router setup
+- `src/routes/__root.tsx`: Root layout component with header and outlet
+- `src/routes/index.tsx`: Home page component (currently template)
+- `src/components/Header.tsx`: Navigation header component
+- `src/routeTree.gen.ts`: Auto-generated route tree (do not edit manually)
 
-### Core Components
+### Development Tooling
 
-1. **HTTP Server**: Standard library HTTP server with embedded HTML
-2. **Device Flow Authentication**: GitHub OAuth without Client Secret
-3. **GitHub API Proxy**: Server-side calls to GitHub API with token storage
-4. **In-memory Token Storage**: Access tokens stored only in memory (global variable)
-5. **Knowledge Document System**: File system-based Markdown serving
+**Build Configuration (vite.config.ts):**
+- Auto-generates routes with TanStack Router plugin
+- React JSX transformation
+- TailwindCSS integration via Vite plugin
+- Path alias resolution (`@/` → `./src/`)
+- Uses `path.resolve(process.cwd())` instead of `__dirname` for compatibility
 
-### Configuration System
-Configuration is handled through the `src/config` package:
-- **Default Client ID**: `Ov23li47XYtQ5ucc3uAf` (embedded in config)
-- **Default Port**: `10238` (not 8080 as documented elsewhere)
-- **Environment Override**: Not currently implemented for ClientID/Port
+**Code Quality (biome.json):**
+- **Formatter**: Tab indentation, double quotes for JavaScript
+- **Linter**: Recommended rules enabled
+- **Import Organization**: Automatic import sorting
+- **File Exclusions**: Ignores generated `routeTree.gen.ts`
 
-### HTTP Handlers (main.go)
-- `GET /` - Main page with embedded HTML template (homeHandler:80)
-- `GET /auth/device` - Initiate Device Flow, returns JSON (deviceAuthHandler:288)
-- `POST /auth/poll` - Poll for access token, JSON request/response (pollTokenHandler:300)
-- `GET /repos` - Get user repositories JSON API (reposHandler:331)
-- `GET /documents` - List knowledge documents (documentsHandler:347)
-- `GET /document/{path}` - Serve individual knowledge document (documentHandler:358)
-- `GET /logout` - Clear access token and redirect (logoutHandler:380)
+**TypeScript Configuration:**
+- **Target**: ES2022 with DOM libraries
+- **Module Resolution**: Bundler mode for modern tooling
+- **Strict Mode**: All strict checks enabled
+- **Path Mapping**: `@/*` → `./src/*` for clean imports
+- **Node Types**: Included for development utilities
 
-### Key Data Structures
-```go
-// Config (src/config/config.go)
-type Config struct {
-    ClientID string // GitHub OAuth Client ID (public)
-    Port     int
-}
+### Key Patterns
 
-// Main types (main.go)
-type Repository struct {
-    Name        string `json:"name"`
-    FullName    string `json:"full_name"`
-    Description string `json:"description"`
-    Private     bool   `json:"private"`
-    HTMLURL     string `json:"html_url"`
-}
-
-type Document struct {
-    Path         string    `json:"path"`
-    Title        string    `json:"title"`
-    RelativePath string    `json:"relative_path"`
-    ModTime      time.Time `json:"mod_time"`
-    Size         int64     `json:"size"`
-    IsDir        bool      `json:"is_dir"`
-}
+**Route Definition Pattern:**
+```typescript
+// File-based routing in src/routes/
+export const Route = createFileRoute('/')({
+  component: ComponentName,
+})
 ```
 
-### GitHub API Integration
-- **User Info**: `GET /user` (fetchUser:446)
-- **Repositories**: `GET /user/repos?sort=updated&per_page=20` (fetchRepositories:470)
-- **Authentication**: Bearer token in Authorization header
-- **Error Handling**: Basic JSON decoding error handling
+**Component Structure:**
+- Functional components with TypeScript
+- TanStack Router `Link` components for navigation
+- TailwindCSS classes for styling
+- Header component provides consistent navigation
 
-### Knowledge Document System (fetchDocuments:494)
-- Scans `knowledge/` directory recursively for `.md` files
-- Serves documents as plain text at `/document/{relativePath}`
-- Security: Path validation prevents directory traversal (line 364)
-- Title extraction from filename (without .md extension)
+### Build Process
 
-## Authentication Flow (Device Flow)
+**Development Server:**
+- Port 3000 (configured in package.json)
+- Hot module replacement via Vite
+- TanStack Router devtools enabled in development
 
-**Implementation Functions:**
-1. **Device Code Request** (requestDeviceCode:385): POST to `https://github.com/login/device/code`
-2. **Token Polling** (pollDeviceToken:413): POST to `https://github.com/login/oauth/access_token`
-3. **Frontend Polling** (JavaScript:207): Client-side polling with interval control
+**Production Build:**
+- `vite build` compiles React application
+- `tsc` runs TypeScript type checking
+- Route tree auto-generated before build
+- Assets optimized and hashed for caching
 
-**Critical Implementation Details:**
-- Uses GitHub's recommended polling interval from device code response
-- Maximum 60 polling attempts (10 minutes timeout)
-- Handles `authorization_pending` and `slow_down` responses appropriately
-- JavaScript-based polling with status updates (lines 207-250)
-- Access token stored in global variable `accessToken` (line 56)
-
-## Development Workflow Considerations
+### Migration Status
 
 **Current State:**
-- Application is in transition from single-file to modular structure
-- `src/handler/handler.go` contains Huma v2 setup but is not integrated with main.go
-- `src/infra/github/client.go` is an empty stub waiting for implementation
-- Configuration system is split between embedded defaults and external config package
-
-**Architectural Inconsistencies:**
-- Main application uses `cfg.Port` from config package but still calls `fmt.Sprintf("%d", cfg.Port)` (main.go:77)
-- Default port mismatch between code (10238) and documentation (8080)
-- Huma v2 dependency imported but not used in main application flow
-- Environment variable override mentioned in docs but not implemented
+- Go backend has been removed from the repository
+- React frontend is functional but contains template content
+- Knowledge document system from original Go app not yet implemented
+- GitHub authentication flow needs to be reimplemented in React
 
 ## File Structure Context
 ```
 /
-├── main.go                    # Main application (543 lines)
-├── go.mod                     # Module: repo-wise, Go 1.24.5
-├── go.sum                     # Dependency checksums
-├── src/
-│   ├── config/
-│   │   └── config.go          # Configuration with embedded defaults
-│   ├── handler/
-│   │   └── handler.go         # Huma v2 API setup (unused)
-│   └── infra/
-│       └── github/
-│           └── client.go      # Empty GitHub client stub
+├── src/                       # React application root
+│   ├── src/                   # Source code
+│   │   ├── main.tsx           # Application entry point
+│   │   ├── routes/            # File-based routing
+│   │   │   ├── __root.tsx     # Root layout with header
+│   │   │   └── index.tsx      # Home page
+│   │   ├── components/        # Reusable components
+│   │   │   └── Header.tsx     # Navigation header
+│   │   ├── routeTree.gen.ts   # Auto-generated (do not edit)
+│   │   ├── styles.css         # Global styles
+│   │   └── logo.svg           # React logo asset
+│   ├── public/                # Static assets
+│   ├── package.json           # Dependencies and scripts
+│   ├── vite.config.ts         # Vite build configuration
+│   ├── tsconfig.json          # TypeScript configuration
+│   ├── biome.json             # Linter and formatter config
+│   └── dist/                  # Production build output
 ├── knowledge/                 # Markdown documents directory
 │   ├── example1.md
 │   ├── example2.md
 │   └── directory/
 │       └── in-dir.md
 ├── README.md                  # User documentation
-├── setup-guide.md             # Detailed setup instructions
+├── setup-guide.md             # Setup instructions
 ├── doc.md                     # Design concepts
 ├── implementation.md          # Implementation notes
 ├── LICENSE                    # License file
 └── CLAUDE.md                  # This file
 ```
+
+## Important Development Notes
+
+### File Generation
+- `src/src/routeTree.gen.ts` is auto-generated by TanStack Router plugin
+- Never edit this file manually - it will be overwritten
+- Routes are automatically discovered from `src/routes/` directory
+
+### TypeScript Configuration
+- Uses modern `"moduleResolution": "bundler"` for Vite compatibility
+- Includes `@types/node` for build-time utilities like `process.cwd()`
+- Path aliases configured for clean imports (`@/` → `./src/`)
+
+### Working Directory
+- When running commands, work from the `src/` directory
+- All npm/pnpm commands should be run from `src/` not project root
+- Development server runs on port 3000, not default Vite port 5173
