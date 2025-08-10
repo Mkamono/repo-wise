@@ -171,3 +171,6 @@ HTTPSの使用を強く推奨します。
 - アクセストークンはサーバーのメモリ内のみ保存
 - 本番環境ではHTTPS必須
 - 定期的なアクセストークンの更新を推奨
+
+
+pnpx create-tsrouter-app@latest my-app --template file-router --tailwind --package-manager pnpm

@@ -11,7 +11,9 @@
       "Bash(gcloud billing accounts:*)",
       "Bash(gcloud projects get-iam-policy:*)",
       "Bash(gcloud iam service-accounts get-iam-policy:*)",
-      "Bash(gcloud iam workload-identity-pools providers describe:*)"
+      "Bash(gcloud iam workload-identity-pools providers describe:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": []
   }

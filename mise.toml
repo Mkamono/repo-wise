@@ -2,3 +2,4 @@
 gcloud = "latest"
 go = "latest"
 terraform = "latest"
+pnpm = "latest"
