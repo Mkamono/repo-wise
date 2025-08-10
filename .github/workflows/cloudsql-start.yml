@@ -29,6 +29,7 @@ jobs:
           gcloud sql instances patch ${{ secrets.WIF_CLOUDSQL_INSTANCE_NAME }} \
             --activation-policy=ALWAYS \
             --quiet
+        continue-on-error: true
 
       - uses: ./.github/workflows/notify-discord/action.yaml
         with:
