@@ -33,3 +33,8 @@ jobs:
       - uses: ./.github/workflows/notify-discord/action.yaml
         with:
           message: "Cloud SQL instance ${{ secrets.WIF_CLOUDSQL_INSTANCE_NAME }} started successfully"
+
+      - uses: ./.github/workflows/notify-discord/action.yaml
+        if: failure()
+        with:
+          message: "Failed to start Cloud SQL instance ${{ secrets.WIF_CLOUDSQL_INSTANCE_NAME }} \nClick [here to view the logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}?check_suite_focus=true)."
