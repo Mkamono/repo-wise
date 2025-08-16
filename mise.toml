@@ -3,3 +3,8 @@ gcloud = "latest"
 go = "latest"
 terraform = "latest"
 pnpm = "latest"
+
+[tasks.backend]
+dir = "backend"
+run = "go run main.go"
+sources = ["backend/**/*"]
