@@ -1,0 +1,19 @@
+# EXAMPLE USAGE:
+#
+#   Refer for explanation to following link:
+#   https://lefthook.dev/configuration/
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: "biome"
+      run: pnpm biome check --fix
+      glob: "*.{js,ts,jsx,tsx}"
+
+    - name: "go fmt"
+      run: go fmt ./...
+      glob: "*.go"
+
+    - name: "go vet"
+      run: go vet ./...
+      glob: "*.go"
