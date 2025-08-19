@@ -12,23 +12,28 @@
     <div class="container mx-auto px-4 py-8">
         <header class="mb-8">
             <h1 class="text-4xl font-bold text-gray-800 mb-2">Repo-Wise Manager</h1>
-            <p class="text-gray-600">Repository and configuration management tool</p>
+            <p class="text-gray-600">Explore directories and discover documents</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Directory Explorer -->
+        <!-- Main workflow container -->
+        <div class="max-w-6xl mx-auto space-y-8">
+            <!-- Step 1: Directory Explorer -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Directory Explorer</h2>
+                <div class="flex items-center mb-4">
+                    <span class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">1</span>
+                    <h2 class="text-2xl font-semibold text-gray-800">Explore Directory</h2>
+                </div>
+                <p class="text-gray-600 mb-6">Navigate through your file system to find the directory you want to explore</p>
                 
                 <!-- Current Path Display -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Current Path</label>
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Directory Path</label>
                     <div class="flex items-center gap-2 mb-2">
                         <input type="text" id="directoryPath" placeholder="/absolute/path/to/directory" 
                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <button onclick="loadDirectory()" 
-                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md whitespace-nowrap">
-                            Go
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md whitespace-nowrap font-medium">
+                            Explore
                         </button>
                     </div>
                     
@@ -55,98 +60,107 @@
                 </div>
             </div>
 
-            <!-- Configuration Manager -->
+            <!-- Step 2: Document Discovery -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Application Configuration</h2>
-                
-                <!-- GitHub Settings -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-700 mb-2">GitHub Settings</h3>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-1">Access Token</label>
-                            <input type="password" id="githubToken" placeholder="GitHub access token"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-1">Ignore Repositories (comma-separated)</label>
-                            <input type="text" id="ignoreRepos" placeholder="repo1, repo2, repo3"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                    </div>
+                <div class="flex items-center mb-4">
+                    <span class="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">2</span>
+                    <h2 class="text-2xl font-semibold text-gray-800">Discover Documents</h2>
                 </div>
-
-                <!-- Local File Settings -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-700 mb-2">Local File Settings</h3>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Directories (comma-separated)</label>
-                        <input type="text" id="localDirectories" placeholder="/path/one, /path/two"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-
-                <!-- App Mode -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Application Mode</label>
-                    <select id="appMode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="web">Web</option>
-                        <option value="cli">CLI</option>
-                        <option value="native">Native</option>
-                    </select>
-                </div>
-
-                <button onclick="saveConfiguration()" 
-                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md w-full">
-                    Save Configuration
-                </button>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-            <!-- Text Files Search -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Text Files Search</h2>
-                <p class="text-gray-600 mb-4">Search for .md, .txt, and extensionless files recursively</p>
+                <p class="text-gray-600 mb-6">Find all documents (.md, .txt, etc.) in the selected directory</p>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Search Directory</label>
                     <div class="flex gap-2">
-                        <input type="text" id="textFilesPath" placeholder="/absolute/path/to/search" 
-                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button onclick="searchTextFiles()" 
-                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md whitespace-nowrap">
-                            Search
+                        <input type="text" id="documentsPath" placeholder="Path will be auto-filled from directory explorer" 
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50">
+                        <button onclick="searchDocuments()" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md whitespace-nowrap font-medium">
+                            Find Documents
                         </button>
                     </div>
+                    <p class="text-xs text-gray-500 mt-1">Click on a directory above to auto-fill this path</p>
                 </div>
 
                 <!-- Search Results -->
-                <div id="textFilesResults" class="max-h-80 overflow-y-auto border rounded-md">
+                <div id="documentsResults" class="max-h-96 overflow-y-auto border rounded-md">
                     <div class="p-4 text-gray-500 text-center">
-                        Enter a directory path above to search for text files
+                        Select a directory above and click "Find Documents" to discover files
                     </div>
                 </div>
 
                 <!-- Results Summary -->
-                <div id="textFilesSummary" class="mt-4 text-sm text-gray-600 hidden">
+                <div id="documentsSummary" class="mt-4 text-sm text-gray-600 hidden">
                     <!-- Summary will be displayed here -->
                 </div>
             </div>
 
-            <!-- Test Greeting -->
+            <!-- Step 3: Document Content Viewer -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Test Greeting</h2>
-                <div class="flex gap-4">
-                    <input type="text" id="greetingName" placeholder="Enter your name" value="world"
-                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button onclick="testGreeting()" 
-                            class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md">
-                        Test Greeting
-                    </button>
+                <div class="flex items-center mb-4">
+                    <span class="bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">3</span>
+                    <h2 class="text-2xl font-semibold text-gray-800">View Document Content</h2>
                 </div>
-                <div id="greetingResult" class="mt-4 p-3 bg-gray-100 rounded-md hidden">
-                    <!-- Greeting result will be displayed here -->
+                <p class="text-gray-600 mb-6">Read the content of selected documents</p>
+                
+                <div class="mb-4">
+                    <div class="flex gap-2">
+                        <input type="text" id="viewDocumentPath" placeholder="Path will be auto-filled when you click a document" 
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50">
+                        <button onclick="loadDocumentContent()" 
+                                class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-md whitespace-nowrap font-medium">
+                            Load Content
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Click on a document above to auto-fill this path</p>
+                </div>
+
+                <!-- Document Content Display -->
+                <div id="documentContent" class="max-h-96 overflow-y-auto border rounded-md bg-gray-50">
+                    <div class="p-4 text-gray-500 text-center">
+                        Select a document above and click "Load Content" to view its content
+                    </div>
+                </div>
+
+                <!-- Content Info -->
+                <div id="contentInfo" class="mt-4 text-sm text-gray-600 hidden">
+                    <!-- Content info will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Step 4: Document Content Editor -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <span class="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">4</span>
+                    <h2 class="text-2xl font-semibold text-gray-800">Edit Document Content</h2>
+                </div>
+                <p class="text-gray-600 mb-6">Modify and save document content</p>
+                
+                <div class="mb-4">
+                    <div class="flex gap-2">
+                        <input type="text" id="editDocumentPath" placeholder="Path will be auto-filled from document viewer" 
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50">
+                        <button onclick="startEditing()" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md whitespace-nowrap font-medium">
+                            Start Editing
+                        </button>
+                        <button onclick="saveDocumentContent()" 
+                                class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md whitespace-nowrap font-medium">
+                            Save Changes
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Load a document in the viewer above to start editing</p>
+                </div>
+
+                <!-- Document Content Editor -->
+                <div class="mb-4">
+                    <textarea id="documentEditor" 
+                              class="w-full h-96 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono text-sm" 
+                              placeholder="Document content will appear here when you start editing..."
+                              disabled></textarea>
+                </div>
+
+                <!-- Save Status -->
+                <div id="saveStatus" class="text-sm text-gray-600 hidden">
+                    <!-- Save status will be displayed here -->
                 </div>
             </div>
         </div>
@@ -168,7 +182,7 @@
             document.getElementById('directoryPath').value = path;
 
             try {
-                const response = await fetch(`/directory?path=${encodeURIComponent(path)}`);
+                const response = await fetch(`/directory?path=${encodeURIComponent(path)}&kind=local`);
                 const data = await response.json();
                 
                 const resultsDiv = document.getElementById('directoryResults');
@@ -185,11 +199,11 @@
                         })
                         .map(item => `
                             <div class="flex items-center p-3 hover:bg-gray-50 border-b last:border-b-0 cursor-pointer ${item.is_dir ? 'hover:bg-blue-50' : ''}" 
-                                 onclick="${item.is_dir ? `navigateToPath('${path}/${item.name}')` : ''}">
+                                 onclick="${item.is_dir ? `selectDirectory('${path}/${item.name}')` : ''}">
                                 <span class="mr-3 text-lg">${item.is_dir ? '📁' : getFileIcon(item.name)}</span>
                                 <span class="font-medium flex-1 ${item.is_dir ? 'text-blue-700' : 'text-gray-700'}">${item.name}</span>
                                 <span class="text-sm text-gray-500">${item.is_dir ? 'Directory' : 'File'}</span>
-                                ${item.is_dir ? '<span class="ml-2 text-gray-400">→</span>' : ''}
+                                ${item.is_dir ? '<button onclick="event.stopPropagation(); updateDocumentsPath(\'' + path + '/' + item.name + '\')" class="ml-2 px-2 py-1 bg-green-100 hover:bg-green-200 rounded text-xs text-green-700">Use for Documents</button>' : ''}
                             </div>
                         `).join('');
                 } else {
@@ -198,6 +212,22 @@
             } catch (error) {
                 document.getElementById('directoryResults').innerHTML = `<div class="text-red-600 p-4 text-center">Error: ${error.message}</div>`;
             }
+        }
+
+        // Select directory for navigation
+        function selectDirectory(path) {
+            navigateToPath(path);
+        }
+
+        // Update documents path input
+        function updateDocumentsPath(path) {
+            document.getElementById('documentsPath').value = path;
+            // Highlight the documents section briefly
+            const documentsSection = document.querySelector('#documentsPath').closest('.bg-white');
+            documentsSection.classList.add('ring-2', 'ring-green-500');
+            setTimeout(() => {
+                documentsSection.classList.remove('ring-2', 'ring-green-500');
+            }, 2000);
         }
 
         // Navigate to specific path
@@ -265,75 +295,17 @@
             return iconMap[extension] || '📄';
         }
 
-        // Save configuration
-        async function saveConfiguration() {
-            const config = {
-                Github: {
-                    AccessToken: document.getElementById('githubToken').value,
-                    IgnoreRepos: document.getElementById('ignoreRepos').value.split(',').map(s => s.trim()).filter(s => s)
-                },
-                LocalFile: {
-                    Directories: document.getElementById('localDirectories').value.split(',').map(s => s.trim()).filter(s => s)
-                },
-                AppMode: {
-                    value: document.getElementById('appMode').value
-                }
-            };
 
-            try {
-                const response = await fetch('/appconfig', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(config)
-                });
-
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert('Configuration saved successfully!');
-                } else {
-                    alert(`Error: ${data.detail || 'Failed to save configuration'}`);
-                }
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            }
-        }
-
-        // Test greeting
-        async function testGreeting() {
-            const name = document.getElementById('greetingName').value || 'world';
-            
-            try {
-                const response = await fetch(`/greeting/${encodeURIComponent(name)}`);
-                const data = await response.json();
-                
-                const resultDiv = document.getElementById('greetingResult');
-                resultDiv.classList.remove('hidden');
-                
-                if (response.ok) {
-                    resultDiv.innerHTML = `<span class="text-green-600">${data.message}</span>`;
-                } else {
-                    resultDiv.innerHTML = `<span class="text-red-600">Error: ${data.detail || 'Failed to get greeting'}</span>`;
-                }
-            } catch (error) {
-                const resultDiv = document.getElementById('greetingResult');
-                resultDiv.classList.remove('hidden');
-                resultDiv.innerHTML = `<span class="text-red-600">Error: ${error.message}</span>`;
-            }
-        }
-
-        // Search for text files using documents API
-        async function searchTextFiles() {
-            const path = document.getElementById('textFilesPath').value;
+        // Search for documents using documents API
+        async function searchDocuments() {
+            const path = document.getElementById('documentsPath').value;
             if (!path) {
-                alert('Please enter a directory path');
+                alert('Please select a directory path');
                 return;
             }
 
-            const resultsDiv = document.getElementById('textFilesResults');
-            const summaryDiv = document.getElementById('textFilesSummary');
+            const resultsDiv = document.getElementById('documentsResults');
+            const summaryDiv = document.getElementById('documentsSummary');
             
             // Show loading state
             resultsDiv.innerHTML = '<div class="p-4 text-center text-gray-600">🔍 Searching for documents...</div>';
@@ -448,11 +420,16 @@
                         <div class="text-gray-700 hover:bg-gray-50 py-1 px-2 rounded flex items-center group" style="padding-left: ${depth * 20 + 8}px;">
                             <span class="font-mono">${currentPrefix}${connector}</span>
                             <span>${icon} </span>
-                            <span class="font-medium ${extensionColor}">${file.name}</span>
+                            <span class="font-medium ${extensionColor} cursor-pointer hover:underline" onclick="selectDocumentForViewing('${file.absolute_path}')">${file.name}</span>
                             <button onclick="copyPath('${file.absolute_path}')" 
-                                    class="ml-auto px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    class="ml-2 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                     title="Copy absolute path">
                                 📋
+                            </button>
+                            <button onclick="selectDocumentForViewing('${file.absolute_path}')" 
+                                    class="ml-1 px-2 py-1 bg-purple-100 hover:bg-purple-200 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity text-purple-700"
+                                    title="View content">
+                                👁️
                             </button>
                         </div>
                     `;
@@ -506,11 +483,182 @@
             }
         }
 
+        // Select document for viewing
+        function selectDocumentForViewing(path) {
+            document.getElementById('viewDocumentPath').value = path;
+            // Highlight the viewer section briefly
+            const viewerSection = document.querySelector('#viewDocumentPath').closest('.bg-white');
+            viewerSection.classList.add('ring-2', 'ring-purple-500');
+            setTimeout(() => {
+                viewerSection.classList.remove('ring-2', 'ring-purple-500');
+            }, 2000);
+        }
+
+        // Load document content
+        async function loadDocumentContent() {
+            const path = document.getElementById('viewDocumentPath').value;
+            if (!path) {
+                alert('Please select a document path');
+                return;
+            }
+
+            const contentDiv = document.getElementById('documentContent');
+            const infoDiv = document.getElementById('contentInfo');
+            
+            // Show loading state
+            contentDiv.innerHTML = '<div class="p-4 text-center text-gray-600">📖 Loading document content...</div>';
+            infoDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/document/content?path=${encodeURIComponent(path)}&kind=local`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Display content in a formatted way
+                    const content = data.content || '';
+                    const lines = content.split('\n').length;
+                    const chars = content.length;
+                    
+                    contentDiv.innerHTML = `
+                        <div class="p-4">
+                            <pre class="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">${escapeHtml(content)}</pre>
+                        </div>
+                    `;
+                    
+                    // Show info
+                    infoDiv.innerHTML = `Document loaded: ${lines} lines, ${chars} characters`;
+                    infoDiv.classList.remove('hidden');
+                    
+                    // Auto-fill editor path
+                    document.getElementById('editDocumentPath').value = path;
+                } else {
+                    contentDiv.innerHTML = `<div class="text-red-600 p-4 text-center">Error: ${data.detail || 'Failed to load document content'}</div>`;
+                    infoDiv.classList.add('hidden');
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="text-red-600 p-4 text-center">Error: ${error.message}</div>`;
+                infoDiv.classList.add('hidden');
+            }
+        }
+
+        // Start editing document
+        function startEditing() {
+            const path = document.getElementById('editDocumentPath').value;
+            if (!path) {
+                // Try to get path from viewer
+                const viewerPath = document.getElementById('viewDocumentPath').value;
+                if (viewerPath) {
+                    document.getElementById('editDocumentPath').value = viewerPath;
+                    loadDocumentForEditing(viewerPath);
+                } else {
+                    alert('Please select a document to edit');
+                }
+                return;
+            }
+            loadDocumentForEditing(path);
+        }
+
+        // Load document for editing
+        async function loadDocumentForEditing(path) {
+            const editor = document.getElementById('documentEditor');
+            const statusDiv = document.getElementById('saveStatus');
+            
+            // Show loading state
+            editor.value = 'Loading document content...';
+            editor.disabled = true;
+            statusDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/document/content?path=${encodeURIComponent(path)}&kind=local`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    editor.value = data.content || '';
+                    editor.disabled = false;
+                    editor.focus();
+                    
+                    statusDiv.innerHTML = `Editing: ${path}`;
+                    statusDiv.classList.remove('hidden');
+                    
+                    // Highlight the editor section briefly
+                    const editorSection = document.querySelector('#editDocumentPath').closest('.bg-white');
+                    editorSection.classList.add('ring-2', 'ring-orange-500');
+                    setTimeout(() => {
+                        editorSection.classList.remove('ring-2', 'ring-orange-500');
+                    }, 2000);
+                } else {
+                    editor.value = '';
+                    editor.disabled = true;
+                    statusDiv.innerHTML = `Error: ${data.detail || 'Failed to load document for editing'}`;
+                    statusDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                editor.value = '';
+                editor.disabled = true;
+                statusDiv.innerHTML = `Error: ${error.message}`;
+                statusDiv.classList.remove('hidden');
+            }
+        }
+
+        // Save document content
+        async function saveDocumentContent() {
+            const path = document.getElementById('editDocumentPath').value;
+            const content = document.getElementById('documentEditor').value;
+            const statusDiv = document.getElementById('saveStatus');
+            
+            if (!path) {
+                alert('No document selected for editing');
+                return;
+            }
+
+            // Show saving state
+            statusDiv.innerHTML = 'Saving document...';
+            statusDiv.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`/document/content?path=${encodeURIComponent(path)}&kind=local`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = `✅ ${data.message} (${new Date().toLocaleTimeString()})`;
+                    statusDiv.classList.add('text-green-600');
+                    statusDiv.classList.remove('text-red-600');
+                    
+                    // Refresh viewer if it's showing the same document
+                    const viewerPath = document.getElementById('viewDocumentPath').value;
+                    if (viewerPath === path) {
+                        loadDocumentContent();
+                    }
+                } else {
+                    statusDiv.innerHTML = `❌ Error: ${data.detail || 'Failed to save document'}`;
+                    statusDiv.classList.add('text-red-600');
+                    statusDiv.classList.remove('text-green-600');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+                statusDiv.classList.add('text-red-600');
+                statusDiv.classList.remove('text-green-600');
+            }
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Auto-load current directory path suggestion
         document.addEventListener('DOMContentLoaded', function() {
             // Set default directory path to home directory
             document.getElementById('directoryPath').value = '/Users';
-            document.getElementById('textFilesPath').value = '/Users';
             
             // Add Enter key support for directory input
             document.getElementById('directoryPath').addEventListener('keypress', function(e) {
@@ -519,10 +667,25 @@
                 }
             });
 
-            // Add Enter key support for text files search
-            document.getElementById('textFilesPath').addEventListener('keypress', function(e) {
+            // Add Enter key support for documents search
+            document.getElementById('documentsPath').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
-                    searchTextFiles();
+                    searchDocuments();
+                }
+            });
+
+            // Add Enter key support for document viewer
+            document.getElementById('viewDocumentPath').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadDocumentContent();
+                }
+            });
+
+            // Add Ctrl+S support for saving in editor
+            document.getElementById('documentEditor').addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    saveDocumentContent();
                 }
             });
         });

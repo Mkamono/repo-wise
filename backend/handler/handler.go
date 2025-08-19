@@ -8,8 +8,6 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 
-	"backend/handler/internal/local"
-
 	_ "github.com/fxamacker/cbor/v2"
 )
 
@@ -37,6 +35,9 @@ func NewHandler(
 	appMode config.AppMode,
 	appConfigProvider config.AppConfigProvider,
 	providers []DocumentsProvider,
+	directoryProviders []DirectoryProvider,
+	documentContentProviders []DocumentContentProvider,
+	documentContentUpdateProviders []DocumentContentUpdateProvider,
 	middlewares ...Middleware,
 ) (http.Handler, error) {
 	router, api := newAPI()
@@ -45,9 +46,9 @@ func NewHandler(
 	newAppConfigUpdateHandler(api, appConfigProvider)
 	newStaticHandler(api)
 	newDocumentsHandler(api, providers)
+	newDirectoryHandler(api, directoryProviders)
+	NewDocumentContentHandler(api, documentContentProviders)
+	NewDocumentContentUpdateHandler(api, documentContentUpdateProviders)
 
-	if appMode == config.CLI || appMode == config.Native {
-		local.NewDirectoryHandler(api)
-	}
 	return router, nil
 }

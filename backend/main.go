@@ -54,6 +54,15 @@ func main() {
 		[]handler.DocumentsProvider{
 			localRepoProvider,
 		},
+		[]handler.DirectoryProvider{
+			localRepoProvider,
+		},
+		[]handler.DocumentContentProvider{
+			localRepoProvider,
+		},
+		[]handler.DocumentContentUpdateProvider{
+			localRepoProvider,
+		},
 		middleware.NewLogger(),
 	)
 

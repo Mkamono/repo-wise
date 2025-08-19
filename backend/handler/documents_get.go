@@ -70,7 +70,6 @@ func newDocumentsHandler(api huma.API, providers []DocumentsProvider) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(doc)
 		return &GetDocumentsOutput{Body: struct {
 			Documents []domain.Document `json:"documents" doc:"List of documents found in the directory"`
 		}{Documents: doc}}, nil
