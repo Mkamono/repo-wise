@@ -6,6 +6,7 @@ interface DirectorySelectionDialogProps {
 	onClose: () => void;
 	onDirectorySelect: (path: string) => void;
 	selectedDirectory?: string;
+	initialPath?: string;
 }
 
 export function DirectorySelectionDialog({
@@ -13,8 +14,9 @@ export function DirectorySelectionDialog({
 	onClose,
 	onDirectorySelect,
 	selectedDirectory,
+	initialPath = "/Users",
 }: DirectorySelectionDialogProps) {
-	const [currentPath, setCurrentPath] = useState("/Users");
+	const [currentPath, setCurrentPath] = useState(initialPath);
 	const [items, setItems] = useState<FileInfo[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);

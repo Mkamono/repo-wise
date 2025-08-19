@@ -4,35 +4,41 @@ import { type FileInfo, getDirectory } from "../../backend";
 interface DirectoryExplorerProps {
 	onDirectorySelect: (path: string) => void;
 	selectedDirectory?: string;
+	currentPath?: string;
+	onPathChange?: (path: string) => void;
 }
 
 export function DirectoryExplorer({
 	onDirectorySelect,
 	selectedDirectory,
+	currentPath = "/Users",
+	onPathChange,
 }: DirectoryExplorerProps) {
-	const [currentPath, setCurrentPath] = useState("/Users");
 	const [items, setItems] = useState<FileInfo[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const loadDirectory = useCallback(async (path: string) => {
-		if (!path.trim()) return;
+	const loadDirectory = useCallback(
+		async (path: string) => {
+			if (!path.trim()) return;
 
-		setLoading(true);
-		setError(null);
+			setLoading(true);
+			setError(null);
 
-		try {
-			const response = await getDirectory({ path, kind: "local" });
-			setItems(response.data.items || []);
-			setCurrentPath(path);
-		} catch (err) {
-			console.error("Failed to load directory:", err);
-			setError("Failed to load directory");
-			setItems([]);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
+			try {
+				const response = await getDirectory({ path, kind: "local" });
+				setItems(response.data.items || []);
+				onPathChange?.(path);
+			} catch (err) {
+				console.error("Failed to load directory:", err);
+				setError("Failed to load directory");
+				setItems([]);
+			} finally {
+				setLoading(false);
+			}
+		},
+		[onPathChange],
+	);
 
 	useEffect(() => {
 		loadDirectory(currentPath);
@@ -98,7 +104,7 @@ export function DirectoryExplorer({
 						id="directory-input"
 						type="text"
 						value={currentPath}
-						onChange={(e) => setCurrentPath(e.target.value)}
+						onChange={(e) => onPathChange?.(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && loadDirectory(currentPath)}
 						className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 						placeholder="/absolute/path/to/directory"
