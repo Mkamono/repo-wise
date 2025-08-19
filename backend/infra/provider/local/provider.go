@@ -14,4 +14,3 @@ func NewLocalProvider() (*local, error) {
 func (p *local) Match(kind domain.RepoKind) bool {
 	return kind == domain.LocalRepoKind
 }
-
