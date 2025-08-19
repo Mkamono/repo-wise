@@ -18,3 +18,10 @@ pre-commit:
     - name: "go vet"
       run: go vet ./...
       glob: "*.go"
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: "frontend build"
+      root: frontend
+      run: pnpm build
