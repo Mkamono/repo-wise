@@ -43,6 +43,7 @@ func NewHandler(
 	router, api := newAPI()
 
 	setupMiddleware(api, middlewares)
+	newAppConfigGetHandler(api, appConfigProvider)
 	newAppConfigUpdateHandler(api, appConfigProvider)
 	newStaticHandler(api)
 	newDocumentsHandler(api, providers)
