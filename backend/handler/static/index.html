@@ -1,0 +1,532 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Repo-Wise Manager</title>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Repo-Wise Manager</h1>
+            <p class="text-gray-600">Repository and configuration management tool</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Directory Explorer -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Directory Explorer</h2>
+                
+                <!-- Current Path Display -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Current Path</label>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="text" id="directoryPath" placeholder="/absolute/path/to/directory" 
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="loadDirectory()" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md whitespace-nowrap">
+                            Go
+                        </button>
+                    </div>
+                    
+                    <!-- Breadcrumb Navigation -->
+                    <nav id="breadcrumb" class="flex items-center space-x-1 text-sm text-gray-600 mb-4">
+                        <!-- Breadcrumb will be populated here -->
+                    </nav>
+                </div>
+
+                <!-- Quick Navigation Buttons -->
+                <div class="mb-4 flex flex-wrap gap-2">
+                    <button onclick="navigateToPath('/')" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">Root</button>
+                    <button onclick="navigateToPath('/Users')" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">Users</button>
+                    <button onclick="navigateToPath('/home')" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">Home</button>
+                    <button onclick="navigateToPath('/tmp')" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">Temp</button>
+                    <button onclick="goUp()" class="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 rounded text-sm">↑ Up</button>
+                </div>
+
+                <!-- Directory Contents -->
+                <div id="directoryResults" class="space-y-1 max-h-96 overflow-y-auto border rounded-md">
+                    <div class="p-4 text-gray-500 text-center">
+                        Enter a path above or click a quick navigation button to start exploring
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Manager -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Application Configuration</h2>
+                
+                <!-- GitHub Settings -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">GitHub Settings</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Access Token</label>
+                            <input type="password" id="githubToken" placeholder="GitHub access token"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Ignore Repositories (comma-separated)</label>
+                            <input type="text" id="ignoreRepos" placeholder="repo1, repo2, repo3"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Local File Settings -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Local File Settings</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Directories (comma-separated)</label>
+                        <input type="text" id="localDirectories" placeholder="/path/one, /path/two"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- App Mode -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Application Mode</label>
+                    <select id="appMode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="web">Web</option>
+                        <option value="cli">CLI</option>
+                        <option value="native">Native</option>
+                    </select>
+                </div>
+
+                <button onclick="saveConfiguration()" 
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md w-full">
+                    Save Configuration
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            <!-- Text Files Search -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Text Files Search</h2>
+                <p class="text-gray-600 mb-4">Search for .md, .txt, and extensionless files recursively</p>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Search Directory</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="textFilesPath" placeholder="/absolute/path/to/search" 
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="searchTextFiles()" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md whitespace-nowrap">
+                            Search
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div id="textFilesResults" class="max-h-80 overflow-y-auto border rounded-md">
+                    <div class="p-4 text-gray-500 text-center">
+                        Enter a directory path above to search for text files
+                    </div>
+                </div>
+
+                <!-- Results Summary -->
+                <div id="textFilesSummary" class="mt-4 text-sm text-gray-600 hidden">
+                    <!-- Summary will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Test Greeting -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Test Greeting</h2>
+                <div class="flex gap-4">
+                    <input type="text" id="greetingName" placeholder="Enter your name" value="world"
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="testGreeting()" 
+                            class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md">
+                        Test Greeting
+                    </button>
+                </div>
+                <div id="greetingResult" class="mt-4 p-3 bg-gray-100 rounded-md hidden">
+                    <!-- Greeting result will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load directory contents
+        async function loadDirectory(path) {
+            if (!path) {
+                path = document.getElementById('directoryPath').value;
+            }
+            
+            if (!path) {
+                alert('Please enter a directory path');
+                return;
+            }
+
+            // Update the input field
+            document.getElementById('directoryPath').value = path;
+
+            try {
+                const response = await fetch(`/directory?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+                
+                const resultsDiv = document.getElementById('directoryResults');
+                
+                if (response.ok) {
+                    updateBreadcrumb(path);
+                    
+                    resultsDiv.innerHTML = data.items
+                        .sort((a, b) => {
+                            // Sort directories first, then files, both alphabetically
+                            if (a.is_dir && !b.is_dir) return -1;
+                            if (!a.is_dir && b.is_dir) return 1;
+                            return a.name.localeCompare(b.name);
+                        })
+                        .map(item => `
+                            <div class="flex items-center p-3 hover:bg-gray-50 border-b last:border-b-0 cursor-pointer ${item.is_dir ? 'hover:bg-blue-50' : ''}" 
+                                 onclick="${item.is_dir ? `navigateToPath('${path}/${item.name}')` : ''}">
+                                <span class="mr-3 text-lg">${item.is_dir ? '📁' : getFileIcon(item.name)}</span>
+                                <span class="font-medium flex-1 ${item.is_dir ? 'text-blue-700' : 'text-gray-700'}">${item.name}</span>
+                                <span class="text-sm text-gray-500">${item.is_dir ? 'Directory' : 'File'}</span>
+                                ${item.is_dir ? '<span class="ml-2 text-gray-400">→</span>' : ''}
+                            </div>
+                        `).join('');
+                } else {
+                    resultsDiv.innerHTML = `<div class="text-red-600 p-4 text-center">Error: ${data.detail || 'Failed to load directory'}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('directoryResults').innerHTML = `<div class="text-red-600 p-4 text-center">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Navigate to specific path
+        function navigateToPath(path) {
+            // Clean up the path
+            const cleanPath = path.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
+            loadDirectory(cleanPath);
+        }
+
+        // Go up one directory level
+        function goUp() {
+            const currentPath = document.getElementById('directoryPath').value;
+            if (currentPath && currentPath !== '/') {
+                const parentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
+                navigateToPath(parentPath);
+            }
+        }
+
+        // Update breadcrumb navigation
+        function updateBreadcrumb(path) {
+            const breadcrumbDiv = document.getElementById('breadcrumb');
+            const pathParts = path.split('/').filter(part => part !== '');
+            
+            let breadcrumbHTML = '<button onclick="navigateToPath(\'/\')" class="hover:text-blue-600 font-medium">/</button>';
+            
+            let currentPath = '';
+            for (let i = 0; i < pathParts.length; i++) {
+                currentPath += '/' + pathParts[i];
+                const isLast = i === pathParts.length - 1;
+                
+                breadcrumbHTML += `
+                    <span class="text-gray-400">/</span>
+                    <button onclick="navigateToPath('${currentPath}')" 
+                            class="${isLast ? 'font-semibold text-gray-800' : 'hover:text-blue-600'}">${pathParts[i]}</button>
+                `;
+            }
+            
+            breadcrumbDiv.innerHTML = breadcrumbHTML;
+        }
+
+        // Get file icon based on extension
+        function getFileIcon(filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            const iconMap = {
+                'js': '📄',
+                'ts': '📄',
+                'py': '🐍',
+                'go': '🔷',
+                'java': '☕',
+                'html': '🌐',
+                'css': '🎨',
+                'json': '📋',
+                'md': '📝',
+                'txt': '📄',
+                'pdf': '📕',
+                'img': '🖼️',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🖼️',
+                'zip': '📦',
+                'tar': '📦',
+                'gz': '📦'
+            };
+            return iconMap[extension] || '📄';
+        }
+
+        // Save configuration
+        async function saveConfiguration() {
+            const config = {
+                Github: {
+                    AccessToken: document.getElementById('githubToken').value,
+                    IgnoreRepos: document.getElementById('ignoreRepos').value.split(',').map(s => s.trim()).filter(s => s)
+                },
+                LocalFile: {
+                    Directories: document.getElementById('localDirectories').value.split(',').map(s => s.trim()).filter(s => s)
+                },
+                AppMode: {
+                    value: document.getElementById('appMode').value
+                }
+            };
+
+            try {
+                const response = await fetch('/appconfig', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('Configuration saved successfully!');
+                } else {
+                    alert(`Error: ${data.detail || 'Failed to save configuration'}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Test greeting
+        async function testGreeting() {
+            const name = document.getElementById('greetingName').value || 'world';
+            
+            try {
+                const response = await fetch(`/greeting/${encodeURIComponent(name)}`);
+                const data = await response.json();
+                
+                const resultDiv = document.getElementById('greetingResult');
+                resultDiv.classList.remove('hidden');
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<span class="text-green-600">${data.message}</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="text-red-600">Error: ${data.detail || 'Failed to get greeting'}</span>`;
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById('greetingResult');
+                resultDiv.classList.remove('hidden');
+                resultDiv.innerHTML = `<span class="text-red-600">Error: ${error.message}</span>`;
+            }
+        }
+
+        // Search for text files using documents API
+        async function searchTextFiles() {
+            const path = document.getElementById('textFilesPath').value;
+            if (!path) {
+                alert('Please enter a directory path');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('textFilesResults');
+            const summaryDiv = document.getElementById('textFilesSummary');
+            
+            // Show loading state
+            resultsDiv.innerHTML = '<div class="p-4 text-center text-gray-600">🔍 Searching for documents...</div>';
+            summaryDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/documents?path=${encodeURIComponent(path)}&kind=local`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const documents = data.documents || [];
+                    
+                    if (documents.length === 0) {
+                        resultsDiv.innerHTML = '<div class="p-4 text-center text-gray-500">No documents found in this directory</div>';
+                        summaryDiv.classList.add('hidden');
+                    } else {
+                        // Convert documents to files format for existing display logic
+                        const files = documents.map(doc => ({
+                            name: doc.name.split('/').pop() || doc.name,
+                            relative_path: doc.name,
+                            absolute_path: doc.path,
+                            extension: getFileExtension(doc.name)
+                        }));
+                        
+                        // Build directory tree structure
+                        const tree = buildFileTree(files);
+                        const treeHTML = renderFileTree(tree, 0);
+                        
+                        resultsDiv.innerHTML = `
+                            <div class="p-3">
+                                <div class="text-sm">
+                                    ${treeHTML}
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Show summary
+                        summaryDiv.innerHTML = `Found ${documents.length} documents in ${path}`;
+                        summaryDiv.classList.remove('hidden');
+                    }
+                } else {
+                    resultsDiv.innerHTML = `<div class="text-red-600 p-4 text-center">Error: ${data.detail || 'Failed to search documents'}</div>`;
+                    summaryDiv.classList.add('hidden');
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="text-red-600 p-4 text-center">Error: ${error.message}</div>`;
+                summaryDiv.classList.add('hidden');
+            }
+        }
+
+        // Get file extension from filename
+        function getFileExtension(filename) {
+            const parts = filename.split('.');
+            return parts.length > 1 ? '.' + parts.pop() : '';
+        }
+
+        // Build file tree structure from flat file list
+        function buildFileTree(files) {
+            const tree = {};
+            
+            files.forEach(file => {
+                const pathParts = file.relative_path.split('/').filter(part => part !== '');
+                let currentLevel = tree;
+                
+                // Build directory structure
+                for (let i = 0; i < pathParts.length - 1; i++) {
+                    const dirName = pathParts[i];
+                    if (!currentLevel[dirName]) {
+                        currentLevel[dirName] = { type: 'directory', children: {} };
+                    }
+                    currentLevel = currentLevel[dirName].children;
+                }
+                
+                // Add the file
+                const fileName = pathParts[pathParts.length - 1];
+                currentLevel[fileName] = {
+                    type: 'file',
+                    data: file
+                };
+            });
+            
+            return tree;
+        }
+
+        // Render file tree as HTML with proper indentation
+        function renderFileTree(tree, depth = 0) {
+            const entries = Object.entries(tree);
+            let html = '';
+            
+            entries.forEach(([name, node], index) => {
+                const isLast = index === entries.length - 1;
+                const connector = isLast ? '└── ' : '├── ';
+                const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(depth);
+                const pipeSpaces = depth > 0 ? '│&nbsp;&nbsp;&nbsp;'.repeat(depth) : '';
+                const currentPrefix = depth > 0 ? (isLast ? indentSpaces : pipeSpaces) : '';
+                
+                if (node.type === 'directory') {
+                    html += `
+                        <div class="text-blue-600 hover:bg-blue-50 py-1 px-2 rounded cursor-pointer" onclick="toggleDirectory(this)" style="padding-left: ${depth * 20 + 8}px;">
+                            <span class="font-mono">${currentPrefix}${connector}</span>📁 <span class="font-medium">${name}/</span>
+                        </div>
+                        <div class="directory-content">
+                            ${renderFileTree(node.children, depth + 1)}
+                        </div>
+                    `;
+                } else {
+                    const file = node.data;
+                    const icon = getFileIcon(file.name);
+                    const extensionColor = getExtensionColor(file.extension);
+                    
+                    html += `
+                        <div class="text-gray-700 hover:bg-gray-50 py-1 px-2 rounded flex items-center group" style="padding-left: ${depth * 20 + 8}px;">
+                            <span class="font-mono">${currentPrefix}${connector}</span>
+                            <span>${icon} </span>
+                            <span class="font-medium ${extensionColor}">${file.name}</span>
+                            <button onclick="copyPath('${file.absolute_path}')" 
+                                    class="ml-auto px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Copy absolute path">
+                                📋
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+            
+            return html;
+        }
+
+        // Toggle directory visibility
+        function toggleDirectory(element) {
+            const content = element.nextElementSibling;
+            if (content && content.classList.contains('directory-content')) {
+                content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                
+                // Update folder icon
+                const folderIcon = element.querySelector('span');
+                if (folderIcon) {
+                    folderIcon.innerHTML = folderIcon.innerHTML.includes('📁') 
+                        ? folderIcon.innerHTML.replace('📁', content.style.display === 'none' ? '📁' : '📂')
+                        : folderIcon.innerHTML.replace('📂', '📁');
+                }
+            }
+        }
+
+        // Get color based on file extension
+        function getExtensionColor(extension) {
+            const colorMap = {
+                '.md': 'text-blue-600',
+                '.txt': 'text-green-600',
+                '': 'text-purple-600'
+            };
+            return colorMap[extension] || 'text-gray-600';
+        }
+
+        // Copy path to clipboard
+        async function copyPath(path) {
+            try {
+                await navigator.clipboard.writeText(path);
+                // Show temporary feedback
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '✓';
+                button.classList.add('bg-green-100');
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('bg-green-100');
+                }, 1000);
+            } catch (err) {
+                alert('Failed to copy to clipboard');
+            }
+        }
+
+        // Auto-load current directory path suggestion
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default directory path to home directory
+            document.getElementById('directoryPath').value = '/Users';
+            document.getElementById('textFilesPath').value = '/Users';
+            
+            // Add Enter key support for directory input
+            document.getElementById('directoryPath').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadDirectory();
+                }
+            });
+
+            // Add Enter key support for text files search
+            document.getElementById('textFilesPath').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchTextFiles();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

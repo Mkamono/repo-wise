@@ -2,13 +2,28 @@ package main
 
 import (
 	"backend/config"
-	"backend/config/local"
+	"backend/config/mode"
 	"backend/handler"
+	"backend/infra/provider/local"
 	"backend/middleware"
+	"backend/util"
 
 	"fmt"
 	"net/http"
 )
+
+func getConfigProvider() (config.AppConfigProvider, error) {
+	appMode, err := config.ParseAppMode(util.LookupEnvOr("APP_MODE", config.CLI.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	if appMode == config.CLI || appMode == config.Native {
+		return mode.NewLocalProvider()
+	}
+
+	return nil, fmt.Errorf("unsupported app mode: %s", appMode)
+}
 
 func main() {
 	serverConfig, err := config.NewServerConfig()
@@ -16,21 +31,30 @@ func main() {
 		panic(err)
 	}
 
-	// TODO: 動作環境ごとに分離
-	appConfigProvider, err := local.NewLocalAppConfigProvider()
+	configProvider, err := getConfigProvider()
 	if err != nil {
 		panic(err)
 	}
 
-	appConfig, err := appConfigProvider.Load()
+	appConfig, err := configProvider.Load()
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Printf("Loaded app config: %+v\n", appConfig)
 
+	localRepoProvider, err := local.NewLocalProvider()
+	if err != nil {
+		panic(err)
+	}
+
 	router, err := handler.NewHandler(
-		middleware.NewLogger(), // Add the logger middleware
+		appConfig.AppMode,
+		configProvider,
+		[]handler.DocumentsProvider{
+			localRepoProvider,
+		},
+		middleware.NewLogger(),
 	)
 
 	if err != nil {
