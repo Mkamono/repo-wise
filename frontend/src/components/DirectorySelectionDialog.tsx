@@ -18,7 +18,6 @@ export function DirectorySelectionDialog({
 	const [items, setItems] = useState<FileInfo[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [breadcrumb, setBreadcrumb] = useState<string[]>([]);
 
 	const loadDirectory = useCallback(async (path: string) => {
 		if (!path.trim()) return;
@@ -30,7 +29,6 @@ export function DirectorySelectionDialog({
 			const response = await getDirectory({ path, kind: "local" });
 			setItems(response.data.items || []);
 			setCurrentPath(path);
-			setBreadcrumb(path.split("/").filter((part) => part.length > 0));
 		} catch (err) {
 			console.error("Failed to load directory:", err);
 			setError("Failed to load directory");
@@ -130,26 +128,29 @@ export function DirectorySelectionDialog({
 						>
 							/
 						</button>
-						{breadcrumb.map((part, index) => {
-							const path = `/${breadcrumb.slice(0, index + 1).join("/")}`;
-							const isLast = index === breadcrumb.length - 1;
-							return (
-								<span key={path} className="flex items-center">
-									<span className="text-gray-500">/</span>
-									<button
-										type="button"
-										onClick={() => navigateToPath(path)}
-										className={
-											isLast
-												? "font-semibold text-gray-200"
-												: "hover:text-blue-400"
-										}
-									>
-										{part}
-									</button>
-								</span>
-							);
-						})}
+						{currentPath
+							.split("/")
+							.filter((part) => part.length > 0)
+							.map((part, index, breadcrumb) => {
+								const path = `/${breadcrumb.slice(0, index + 1).join("/")}`;
+								const isLast = index === breadcrumb.length - 1;
+								return (
+									<span key={path} className="flex items-center">
+										<span className="text-gray-500">/</span>
+										<button
+											type="button"
+											onClick={() => navigateToPath(path)}
+											className={
+												isLast
+													? "font-semibold text-gray-200"
+													: "hover:text-blue-400"
+											}
+										>
+											{part}
+										</button>
+									</span>
+								);
+							})}
 					</nav>
 
 					{/* Quick Navigation */}

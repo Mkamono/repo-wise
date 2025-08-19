@@ -20,10 +20,6 @@ function App() {
 	const navigate = useNavigate();
 	const { directory, file } = Route.useSearch();
 
-	const [activeFile, setActiveFile] = useState<string | null>(file || null);
-	const [selectedDirectory, setSelectedDirectory] = useState<
-		string | undefined
-	>(directory);
 	const [showDirectoryDialog, setShowDirectoryDialog] = useState(!directory);
 
 	// Update URL when directory or file changes
@@ -39,52 +35,43 @@ function App() {
 
 	// Handle file selection with URL update
 	const handleFileSelect = (filePath: string) => {
-		setActiveFile(filePath);
-		updateURL(selectedDirectory, filePath);
+		updateURL(directory, filePath);
 	};
 
 	// Handle directory selection with URL update
 	const handleDirectorySelect = (directoryPath: string) => {
-		setSelectedDirectory(directoryPath);
 		setShowDirectoryDialog(false);
 		// Clear active file when directory changes
-		setActiveFile(null);
 		updateURL(directoryPath, undefined);
 	};
 
-	// Sync state with URL changes (for browser back/forward)
+	// Sync dialog state with URL changes (for browser back/forward)
 	useEffect(() => {
-		if (directory !== selectedDirectory) {
-			setSelectedDirectory(directory);
-			setShowDirectoryDialog(!directory);
-		}
-		if (file !== activeFile) {
-			setActiveFile(file || null);
-		}
-	}, [directory, file, selectedDirectory, activeFile]);
+		setShowDirectoryDialog(!directory);
+	}, [directory]);
 
 	return (
 		<div className="h-screen flex flex-col bg-gray-900">
 			<Header
 				onDirectorySelect={() => setShowDirectoryDialog(true)}
-				selectedDirectory={selectedDirectory}
-				activeFile={activeFile}
+				selectedDirectory={directory}
+				activeFile={file}
 			/>
 			<div className="flex flex-1 overflow-hidden">
 				<Sidebar
 					onFileSelect={handleFileSelect}
-					selectedDirectory={selectedDirectory}
-					activeFile={activeFile}
+					selectedDirectory={directory}
+					activeFile={file}
 					onDirectorySelect={() => setShowDirectoryDialog(true)}
 				/>
-				<Editor activeFile={activeFile} />
+				<Editor activeFile={file || null} />
 			</div>
 
 			<DirectorySelectionDialog
 				isOpen={showDirectoryDialog}
 				onClose={() => setShowDirectoryDialog(false)}
 				onDirectorySelect={handleDirectorySelect}
-				selectedDirectory={selectedDirectory}
+				selectedDirectory={directory}
 			/>
 		</div>
 	);

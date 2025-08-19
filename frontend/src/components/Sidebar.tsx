@@ -108,10 +108,15 @@ function FileTree({
 		() => new Set(getAllFolderPaths(items)),
 	);
 
-	// Update expanded folders when items change
-	useEffect(() => {
-		setExpandedFolders(new Set(getAllFolderPaths(items)));
-	}, [items, getAllFolderPaths]);
+	// Reset expanded folders when items change (during rendering)
+	const currentAllFolderPaths = getAllFolderPaths(items);
+	const currentAllFolderPathsSet = new Set(currentAllFolderPaths);
+	if (
+		expandedFolders.size !== currentAllFolderPathsSet.size ||
+		!currentAllFolderPaths.every((path) => expandedFolders.has(path))
+	) {
+		setExpandedFolders(currentAllFolderPathsSet);
+	}
 
 	const toggleFolder = (path: string) => {
 		const newExpanded = new Set(expandedFolders);
