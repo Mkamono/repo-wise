@@ -13,6 +13,8 @@
     "check": "biome check"
   },
   "dependencies": {
+    "@mdxeditor/editor": "^3.42.0",
+    "@radix-ui/colors": "^3.0.0",
     "@tailwindcss/vite": "^4.1.12",
     "@tanstack/react-devtools": "^0.2.2",
     "@tanstack/react-router": "^1.131.26",
