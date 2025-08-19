@@ -12,14 +12,17 @@ pre-commit:
       glob: "*.{js,ts,jsx,tsx}"
 
     - name: "go fmt"
+      root: backend
       run: go fmt ./...
       glob: "*.go"
 
     - name: "go vet"
+      root: backend
       run: go vet ./...
       glob: "*.go"
 
     - name: "go mod tidy"
+      root: backend
       run: go mod tidy
       glob: "*.go"
 

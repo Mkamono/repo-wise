@@ -10,7 +10,8 @@
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "orval": "orval --config ./orval.config.cjs"
   },
   "dependencies": {
     "@mdxeditor/editor": "^3.42.0",
@@ -23,7 +24,8 @@
     "axios": "^1.11.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.12",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

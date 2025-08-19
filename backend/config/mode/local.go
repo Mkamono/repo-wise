@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io/fs"
 	"os"
-	"os/user"
 	"path/filepath"
 )
 
@@ -14,7 +13,12 @@ type local struct {
 }
 
 func NewLocalProvider() (*local, error) {
-	configPath := getConfigFilePath()
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return nil, err
+	}
+
+	configPath := filepath.Join(configDir, "repo-wise", "config.json")
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		if err := initConfig(configPath); err != nil {
@@ -22,7 +26,7 @@ func NewLocalProvider() (*local, error) {
 		}
 	}
 	return &local{
-		configPath: getConfigFilePath(),
+		configPath: configPath,
 	}, nil
 }
 
@@ -93,23 +97,6 @@ func (p *local) Save(appConfig *config.AppConfig) error {
 		return err
 	}
 	return nil
-}
-
-func getConfigFilePath() string {
-	XDG_CONFIG_HOME := os.Getenv("XDG_CONFIG_HOME")
-	user, err := user.Current()
-	if err != nil {
-		return ""
-	}
-
-	configDir := func() string {
-		if XDG_CONFIG_HOME != "" {
-			return XDG_CONFIG_HOME
-		}
-		return filepath.Join(user.HomeDir, ".config")
-	}
-
-	return filepath.Join(configDir(), "repowise", "config.json")
 }
 
 func initConfig(configPath string) error {
