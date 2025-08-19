@@ -1,15 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import { DirectorySelectionDialog } from "../components/DirectorySelectionDialog";
 import { Editor } from "../components/Editor";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
 
+const browseSearchSchema = z.object({
+	file: z.string().optional(),
+});
+
+type BrowseSearch = z.infer<typeof browseSearchSchema>;
+
 export const Route = createFileRoute("/browse/$path")({
-	validateSearch: (search: Record<string, unknown>) => {
-		return {
-			file: (search.file as string) || undefined,
-		};
+	validateSearch: (search: Record<string, unknown>): BrowseSearch => {
+		try {
+			return browseSearchSchema.parse(search);
+		} catch {
+			return { file: undefined };
+		}
 	},
 	component: BrowseApp,
 });
@@ -29,9 +38,9 @@ function BrowseApp() {
 	// Handle file selection with URL update
 	const handleFileSelect = (filePath: string) => {
 		navigate({
-			to: "/browse/$path",
-			params: { path: directoryPath },
-			search: { file: filePath },
+			to: ".",
+			search: (prev) => ({ ...prev, file: filePath }),
+			replace: true,
 		});
 	};
 
@@ -42,12 +51,12 @@ function BrowseApp() {
 		navigate({
 			to: "/browse/$path",
 			params: { path: encodedPath },
-			search: { file: undefined },
+			search: {},
 		});
 	};
 
 	return (
-		<div className="h-screen flex flex-col bg-gray-900">
+		<>
 			<Header
 				onDirectorySelect={() => setShowDirectoryDialog(true)}
 				selectedDirectory={directory}
@@ -69,6 +78,6 @@ function BrowseApp() {
 				onDirectorySelect={handleDirectorySelect}
 				selectedDirectory={directory}
 			/>
-		</div>
+		</>
 	);
 }

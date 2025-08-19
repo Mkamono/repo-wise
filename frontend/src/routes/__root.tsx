@@ -2,9 +2,9 @@ import { TanstackDevtools } from "@tanstack/react-devtools";
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
-export const Route = createRootRoute({
-	component: () => (
-		<>
+function RootLayout() {
+	return (
+		<div className="h-screen flex flex-col bg-gray-900">
 			<Outlet />
 			<TanstackDevtools
 				config={{
@@ -17,6 +17,10 @@ export const Route = createRootRoute({
 					},
 				]}
 			/>
-		</>
-	),
+		</div>
+	);
+}
+
+export const Route = createRootRoute({
+	component: RootLayout,
 });

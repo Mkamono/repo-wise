@@ -13,16 +13,15 @@ function App() {
 	// Handle directory selection with navigation to browse route
 	const handleDirectorySelect = (directoryPath: string) => {
 		setShowDirectoryDialog(false);
-		const encodedPath = encodeURIComponent(directoryPath);
 		navigate({
 			to: "/browse/$path",
-			params: { path: encodedPath },
-			search: { file: undefined },
+			params: { path: encodeURIComponent(directoryPath) },
+			search: {},
 		});
 	};
 
 	return (
-		<div className="h-screen flex flex-col bg-gray-900 items-center justify-center">
+		<div className="flex-1 flex flex-col items-center justify-center">
 			<div className="text-center mb-8">
 				<h1 className="text-4xl font-bold text-white mb-4">📁 File Browser</h1>
 				<p className="text-gray-400 text-lg">
