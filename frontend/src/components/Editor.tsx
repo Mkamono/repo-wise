@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getDocumentContent } from "../../backend";
+import { getDocumentContent } from "../api/backend";
 
 interface EditorProps {
 	activeFile: string | null;

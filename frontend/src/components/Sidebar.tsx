@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { type Document, getDocuments } from "../../backend";
+import { getDocuments } from "../api/backend";
+import type { Document } from "../api/model";
 
 interface FileItem {
 	name: string;
@@ -37,7 +38,9 @@ function buildFileTree(
 			continue;
 		}
 
-		const pathParts = relativePath.split("/").filter((part) => part.length > 0);
+		const pathParts = relativePath
+			.split("/")
+			.filter((part: string) => part.length > 0);
 		let currentLevel = tree;
 		let currentPath = selectedDirectory || "";
 

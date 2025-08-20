@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { type FileInfo, getDirectory } from "../../backend";
+import { getDirectory } from "../api/backend";
+import type { FileInfo } from "../api/model";
 
 interface DirectorySelectionDialogProps {
 	isOpen: boolean;
