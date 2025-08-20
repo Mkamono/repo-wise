@@ -83,23 +83,31 @@ function BrowseApp() {
 		});
 	};
 
-	// Handle adding current directory to favorites
-	const handleAddToFavorites = async () => {
+	// Handle toggling favorite status for current directory
+	const handleToggleFavorite = async () => {
 		if (!appConfig || !directory) return;
 
 		const currentDirectories = appConfig.LocalFile?.Directories || [];
+		const isCurrentlyFavorite = currentDirectories.includes(directory);
 
-		// Check if already exists
-		if (currentDirectories.includes(directory)) {
-			alert("This directory is already in your favorites!");
-			return;
+		let updatedDirectories: string[];
+		let message: string;
+
+		if (isCurrentlyFavorite) {
+			// Remove from favorites
+			updatedDirectories = currentDirectories.filter((d) => d !== directory);
+			message = "Removed from favorites!";
+		} else {
+			// Add to favorites
+			updatedDirectories = [...currentDirectories, directory];
+			message = "Added to favorites!";
 		}
 
 		const updatedConfig = {
 			...appConfig,
 			LocalFile: {
 				...appConfig.LocalFile,
-				Directories: [...currentDirectories, directory],
+				Directories: updatedDirectories,
 			},
 		};
 
@@ -107,17 +115,16 @@ function BrowseApp() {
 			await updateConfig(updatedConfig);
 			// Invalidate and refetch route data
 			navigate({ to: ".", replace: true });
-			alert("Added to favorites!");
+			alert(message);
 		} catch (error) {
-			console.error("Failed to add to favorites:", error);
-			alert("Failed to add to favorites");
+			console.error("Failed to update favorites:", error);
+			alert("Failed to update favorites");
 		}
 	};
 
 	const configDirectories = appConfig?.LocalFile?.Directories || [];
-	const canAddToFavorites = !!(
-		directory && !configDirectories.includes(directory)
-	);
+	const isFavorite = !!(directory && configDirectories.includes(directory));
+	const canToggleFavorite = !!directory;
 
 	return (
 		<>
@@ -125,9 +132,10 @@ function BrowseApp() {
 				onDirectorySelect={handleDirectorySelectNavigation}
 				selectedDirectory={directory}
 				activeFile={file}
-				onAddToFavorites={handleAddToFavorites}
-				isAddingToFavorites={isUpdatingConfig}
-				canAddToFavorites={canAddToFavorites}
+				onToggleFavorite={handleToggleFavorite}
+				isUpdatingFavorite={isUpdatingConfig}
+				isFavorite={isFavorite}
+				canToggleFavorite={canToggleFavorite}
 				onNavigateToDirectory={handleNavigateToDirectory}
 			/>
 			<div className="flex flex-1 overflow-hidden">

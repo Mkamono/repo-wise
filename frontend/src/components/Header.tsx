@@ -2,9 +2,10 @@ interface HeaderProps {
 	onDirectorySelect?: () => void;
 	selectedDirectory?: string;
 	activeFile?: string | null;
-	onAddToFavorites?: () => void;
-	isAddingToFavorites?: boolean;
-	canAddToFavorites?: boolean;
+	onToggleFavorite?: () => void;
+	isUpdatingFavorite?: boolean;
+	isFavorite?: boolean;
+	canToggleFavorite?: boolean;
 	onNavigateToDirectory?: (path: string) => void;
 }
 
@@ -12,9 +13,10 @@ export function Header({
 	onDirectorySelect,
 	selectedDirectory,
 	activeFile,
-	onAddToFavorites,
-	isAddingToFavorites,
-	canAddToFavorites,
+	onToggleFavorite,
+	isUpdatingFavorite,
+	isFavorite,
+	canToggleFavorite,
 	onNavigateToDirectory,
 }: HeaderProps) {
 	// Generate breadcrumb paths from the selected directory
@@ -48,19 +50,17 @@ export function Header({
 						>
 							<span className="text-lg">➕</span> Change Directory
 						</button>
-						{onAddToFavorites && (
+						{onToggleFavorite && (
 							<button
 								type="button"
-								onClick={onAddToFavorites}
-								disabled={isAddingToFavorites || !canAddToFavorites}
+								onClick={onToggleFavorite}
+								disabled={isUpdatingFavorite || !canToggleFavorite}
 								className="hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer px-2 py-1 rounded flex items-center gap-1"
 								title={
-									canAddToFavorites
-										? "Add to favorites"
-										: "Already in favorites"
+									isFavorite ? "Remove from favorites" : "Add to favorites"
 								}
 							>
-								{canAddToFavorites ? "☆" : "⭐"} Favorite
+								{isFavorite ? "⭐" : "☆"} {isFavorite ? "Remove" : "Add"}
 							</button>
 						)}
 					</nav>

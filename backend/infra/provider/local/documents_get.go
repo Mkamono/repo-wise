@@ -7,44 +7,108 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 var _ handler.DocumentsProvider = (*local)(nil)
 
 func (p *local) GetDocuments(ctx context.Context, path string, condition handler.DocumentCondition) ([]domain.Document, error) {
-	// ディレクトリをスキャンして条件に合うファイルを探す
+	type fileInfo struct {
+		path string
+		info os.FileInfo
+	}
+	
+	// 適切なワーカー数（IOバウンドなので控えめに）
+	numWorkers := 8
+	fileChan := make(chan fileInfo, 1000)
+	resultChan := make(chan domain.Document, 100)
+	
+	var wg sync.WaitGroup
 	var matchedFiles []domain.Document
-
-	err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// ディレクトリの場合はスキップ
-		if info.IsDir() {
-			// 除外条件をチェック
-			for _, dirName := range condition.Excludes.DirNames {
-				if dirName != "" && matchPattern(dirName, info.Name()) {
-					return filepath.SkipDir
+	
+	// ワーカーgoroutineを起動（固定数でリソース使用を制御）
+	for range numWorkers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for file := range fileChan {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+				
+				// 条件チェック（CPU処理）
+				if matchesCondition(file.path, file.info, condition) {
+					relPath, _ := filepath.Rel(path, file.path)
+					select {
+					case resultChan <- domain.Document{
+						Path: file.path,
+						Name: relPath,
+					}:
+					case <-ctx.Done():
+						return
+					}
 				}
 			}
+		}()
+	}
+	
+	// 結果収集goroutine
+	done := make(chan bool)
+	go func() {
+		defer close(done)
+		for doc := range resultChan {
+			matchedFiles = append(matchedFiles, doc)
+		}
+	}()
+	
+	// ファイルシステム走査（単一goroutineでIO最適化）
+	go func() {
+		defer close(fileChan)
+		filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			if info.IsDir() {
+				// ディレクトリ除外チェック
+				for _, dirName := range condition.Excludes.DirNames {
+					if dirName != "" && matchPattern(dirName, info.Name()) {
+						return filepath.SkipDir
+					}
+				}
+				return nil
+			}
+
+			// ファイル情報をワーカーに送信
+			select {
+			case fileChan <- fileInfo{path: filePath, info: info}:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			
 			return nil
-		}
-
-		// ファイルが条件を満たすかチェック
-		if matchesCondition(filePath, info, condition) {
-			relPath, _ := filepath.Rel(path, filePath)
-			matchedFiles = append(matchedFiles, domain.Document{
-				Path: filePath,
-				Name: relPath,
-			})
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
+		})
+	}()
+	
+	// ワーカー完了待機goroutine
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+	
+	// 結果収集完了を待機
+	<-done
+	
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
 	}
 
 	if len(matchedFiles) > 0 {

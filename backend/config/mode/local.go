@@ -2,7 +2,9 @@ package mode
 
 import (
 	"backend/config"
+	"backend/util"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -13,7 +15,8 @@ type local struct {
 }
 
 func NewLocalProvider() (*local, error) {
-	configDir, err := os.UserConfigDir()
+	configDir, err := util.UserConfigDir()
+	fmt.Println("User config directory:", configDir)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +46,7 @@ type localAppConfig struct {
 }
 
 func (p *local) Load() (*config.AppConfig, error) {
+	fmt.Println("Loading configuration from:", p.configPath)
 	file, err := os.Open(p.configPath)
 	if err != nil {
 		return nil, err
@@ -53,6 +57,8 @@ func (p *local) Load() (*config.AppConfig, error) {
 	if err := json.NewDecoder(file).Decode(&cfg); err != nil {
 		return nil, err
 	}
+
+	fmt.Println("Loaded configuration:", cfg)
 
 	return &config.AppConfig{
 		Github: config.Github{
