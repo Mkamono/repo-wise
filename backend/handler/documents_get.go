@@ -62,7 +62,7 @@ func newDocumentsHandler(api huma.API, providers []DocumentsProvider) {
 				DirNames: []string{"*"},
 			},
 			Excludes: Condition{
-				DirNames: []string{".git", "node_modules"},
+				DirNames: []string{".git", "node_modules", ".Trash"},
 			},
 		}
 

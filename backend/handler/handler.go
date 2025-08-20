@@ -38,6 +38,8 @@ func NewHandler(
 	directoryProviders []DirectoryProvider,
 	documentContentProviders []DocumentContentProvider,
 	documentContentUpdateProviders []DocumentContentUpdateProvider,
+	documentCreateProviders []DocumentCreateProvider,
+	documentDeleteProviders []DocumentDeleteProvider,
 	middlewares ...Middleware,
 ) (http.Handler, error) {
 	router, api := newAPI()
@@ -50,6 +52,8 @@ func NewHandler(
 	newDirectoryHandler(api, directoryProviders)
 	NewDocumentContentHandler(api, documentContentProviders)
 	NewDocumentContentUpdateHandler(api, documentContentUpdateProviders)
+	NewDocumentCreateHandler(api, documentCreateProviders)
+	NewDocumentDeleteHandler(api, documentDeleteProviders)
 
 	return router, nil
 }

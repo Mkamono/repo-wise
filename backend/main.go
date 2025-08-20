@@ -63,6 +63,12 @@ func main() {
 		[]handler.DocumentContentUpdateProvider{
 			localRepoProvider,
 		},
+		[]handler.DocumentCreateProvider{
+			localRepoProvider,
+		},
+		[]handler.DocumentDeleteProvider{
+			localRepoProvider,
+		},
 		middleware.NewLogger(),
 	)
 

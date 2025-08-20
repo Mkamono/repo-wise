@@ -9,18 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SelectDirectoryRouteImport } from './routes/select-directory'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BrowseIndexRouteImport } from './routes/browse/index'
 import { Route as BrowsePathRouteImport } from './routes/browse.$path'
 
+const SelectDirectoryRoute = SelectDirectoryRouteImport.update({
+  id: '/select-directory',
+  path: '/select-directory',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BrowseIndexRoute = BrowseIndexRouteImport.update({
-  id: '/browse/',
-  path: '/browse/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrowsePathRoute = BrowsePathRouteImport.update({
@@ -31,48 +31,48 @@ const BrowsePathRoute = BrowsePathRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/select-directory': typeof SelectDirectoryRoute
   '/browse/$path': typeof BrowsePathRoute
-  '/browse': typeof BrowseIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/select-directory': typeof SelectDirectoryRoute
   '/browse/$path': typeof BrowsePathRoute
-  '/browse': typeof BrowseIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/select-directory': typeof SelectDirectoryRoute
   '/browse/$path': typeof BrowsePathRoute
-  '/browse/': typeof BrowseIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/browse/$path' | '/browse'
+  fullPaths: '/' | '/select-directory' | '/browse/$path'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/browse/$path' | '/browse'
-  id: '__root__' | '/' | '/browse/$path' | '/browse/'
+  to: '/' | '/select-directory' | '/browse/$path'
+  id: '__root__' | '/' | '/select-directory' | '/browse/$path'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SelectDirectoryRoute: typeof SelectDirectoryRoute
   BrowsePathRoute: typeof BrowsePathRoute
-  BrowseIndexRoute: typeof BrowseIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/select-directory': {
+      id: '/select-directory'
+      path: '/select-directory'
+      fullPath: '/select-directory'
+      preLoaderRoute: typeof SelectDirectoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/browse/': {
-      id: '/browse/'
-      path: '/browse'
-      fullPath: '/browse'
-      preLoaderRoute: typeof BrowseIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/browse/$path': {
@@ -87,8 +87,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SelectDirectoryRoute: SelectDirectoryRoute,
   BrowsePathRoute: BrowsePathRoute,
-  BrowseIndexRoute: BrowseIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

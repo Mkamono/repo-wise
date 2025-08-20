@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { useGetDocumentContent } from "../api/backend";
+import { useDeleteDocument, useGetDocumentContent } from "../api/backend";
 
 interface EditorProps {
 	activeFile: string | null;
+	onFileDeleted?: () => void;
 }
 
-export function Editor({ activeFile }: EditorProps) {
+export function Editor({ activeFile, onFileDeleted }: EditorProps) {
 	const [isDirty, setIsDirty] = useState<boolean>(false);
 	const [localContent, setLocalContent] = useState<string>("");
+	const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
 
 	const {
 		data: contentResponse,
@@ -23,6 +25,9 @@ export function Editor({ activeFile }: EditorProps) {
 			},
 		},
 	);
+
+	const { trigger: deleteDocument, isMutating: isDeleting } =
+		useDeleteDocument();
 
 	useEffect(() => {
 		if (contentResponse?.data.content !== undefined) {
@@ -52,6 +57,31 @@ export function Editor({ activeFile }: EditorProps) {
 		setIsDirty(true);
 	};
 
+	const handleDeleteClick = () => {
+		setShowDeleteDialog(true);
+	};
+
+	const handleConfirmDelete = async () => {
+		if (!activeFile) return;
+
+		try {
+			await deleteDocument({
+				path: activeFile,
+				kind: "local",
+			});
+
+			setShowDeleteDialog(false);
+			onFileDeleted?.();
+		} catch (error) {
+			console.error("Failed to delete document:", error);
+			alert("Failed to delete document");
+		}
+	};
+
+	const handleCancelDelete = () => {
+		setShowDeleteDialog(false);
+	};
+
 	return (
 		<div className="flex-1 flex flex-col bg-gray-900">
 			{/* File Header */}
@@ -64,7 +94,18 @@ export function Editor({ activeFile }: EditorProps) {
 						</span>
 						{isDirty && <span className="text-orange-400 text-xs">●</span>}
 					</div>
-					<div className="text-xs text-gray-400 font-mono">{activeFile}</div>
+					<div className="flex items-center space-x-3">
+						<div className="text-xs text-gray-400 font-mono">{activeFile}</div>
+						<button
+							type="button"
+							onClick={handleDeleteClick}
+							disabled={isDeleting}
+							className="text-red-400 hover:text-red-300 hover:bg-red-400/10 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer p-1 rounded transition-colors"
+							title="Delete document"
+						>
+							{isDeleting ? "🗑️..." : "🗑️"}
+						</button>
+					</div>
 				</div>
 			)}
 
@@ -96,6 +137,39 @@ export function Editor({ activeFile }: EditorProps) {
 					</div>
 				)}
 			</div>
+
+			{/* Delete Confirmation Dialog */}
+			{showDeleteDialog && (
+				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+					<div className="bg-gray-800 border border-gray-600 rounded-lg p-6 max-w-md w-full mx-4">
+						<h3 className="text-lg font-medium text-gray-200 mb-4">
+							Delete Document
+						</h3>
+						<p className="text-gray-300 mb-6">
+							Are you sure you want to delete "{activeFile?.split("/").pop()}"?
+							This action cannot be undone.
+						</p>
+						<div className="flex justify-end space-x-3">
+							<button
+								type="button"
+								onClick={handleCancelDelete}
+								disabled={isDeleting}
+								className="px-4 py-2 text-gray-300 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer rounded transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={handleConfirmDelete}
+								disabled={isDeleting}
+								className="px-4 py-2 text-white bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer rounded transition-colors"
+							>
+								{isDeleting ? "Deleting..." : "Delete"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

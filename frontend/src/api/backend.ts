@@ -25,6 +25,10 @@ import type {
 import type {
   AppConfig,
   AppConfigUpdateOutputBody,
+  CreateDocumentInputBody,
+  CreateDocumentOutputBody,
+  DeleteDocumentInputBody,
+  DeleteDocumentOutputBody,
   ErrorModel,
   GetDirectoryOutputBody,
   GetDirectoryParams,
@@ -224,6 +228,94 @@ export const useGetDirectory = <TError = AxiosError<ErrorModel>>(
   const swrFn = () => getDirectory(params, axiosOptions)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * @summary Delete document
+ */
+export const deleteDocument = (
+    deleteDocumentInputBody: NonReadonly<DeleteDocumentInputBody>, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<DeleteDocumentOutputBody>> => {
+    return axios.default.delete(
+      `/document`,{data:
+      deleteDocumentInputBody, ...options}
+    );
+  }
+
+
+
+export const getDeleteDocumentMutationFetcher = ( options?: AxiosRequestConfig) => {
+  return (_: Key, { arg }: { arg: NonReadonly<DeleteDocumentInputBody> }): Promise<AxiosResponse<DeleteDocumentOutputBody>> => {
+    return deleteDocument(arg, options);
+  }
+}
+export const getDeleteDocumentMutationKey = () => [`/document`] as const;
+
+export type DeleteDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDocument>>>
+export type DeleteDocumentMutationError = AxiosError<ErrorModel>
+
+/**
+ * @summary Delete document
+ */
+export const useDeleteDocument = <TError = AxiosError<ErrorModel>>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof deleteDocument>>, TError, Key, NonReadonly<DeleteDocumentInputBody>, Awaited<ReturnType<typeof deleteDocument>>> & { swrKey?: string }, axios?: AxiosRequestConfig}
+) => {
+
+  const {swr: swrOptions, axios: axiosOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getDeleteDocumentMutationKey();
+  const swrFn = getDeleteDocumentMutationFetcher(axiosOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * @summary Post document
+ */
+export const postDocument = (
+    createDocumentInputBody: NonReadonly<CreateDocumentInputBody>, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CreateDocumentOutputBody>> => {
+    return axios.default.post(
+      `/document`,
+      createDocumentInputBody,options
+    );
+  }
+
+
+
+export const getPostDocumentMutationFetcher = ( options?: AxiosRequestConfig) => {
+  return (_: Key, { arg }: { arg: NonReadonly<CreateDocumentInputBody> }): Promise<AxiosResponse<CreateDocumentOutputBody>> => {
+    return postDocument(arg, options);
+  }
+}
+export const getPostDocumentMutationKey = () => [`/document`] as const;
+
+export type PostDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof postDocument>>>
+export type PostDocumentMutationError = AxiosError<ErrorModel>
+
+/**
+ * @summary Post document
+ */
+export const usePostDocument = <TError = AxiosError<ErrorModel>>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof postDocument>>, TError, Key, NonReadonly<CreateDocumentInputBody>, Awaited<ReturnType<typeof postDocument>>> & { swrKey?: string }, axios?: AxiosRequestConfig}
+) => {
+
+  const {swr: swrOptions, axios: axiosOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getPostDocumentMutationKey();
+  const swrFn = getPostDocumentMutationFetcher(axiosOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
 
   return {
     swrKey,
