@@ -1,60 +1,54 @@
-import { useCallback, useEffect, useState } from "react";
-import { getDocumentContent } from "../api/backend";
+import { useEffect, useState } from "react";
+import { useGetDocumentContent } from "../api/backend";
 
 interface EditorProps {
 	activeFile: string | null;
 }
 
 export function Editor({ activeFile }: EditorProps) {
-	const [content, setContent] = useState<string>("");
-	const [loading, setLoading] = useState<boolean>(false);
 	const [isDirty, setIsDirty] = useState<boolean>(false);
+	const [localContent, setLocalContent] = useState<string>("");
 
-	const loadDocumentContent = useCallback(
-		async (path: string): Promise<string> => {
-			try {
-				console.log("Loading document content for path:", path);
-				const response = await getDocumentContent({ path, kind: "local" });
-				console.log("Document content response:", response);
-				return response.data.content;
-			} catch (error) {
-				console.error("Failed to load document content:", error);
-				if (error && typeof error === "object" && "response" in error) {
-					const axiosError = error as {
-						response?: { data?: unknown; status?: number };
-					};
-					console.error("Error response data:", axiosError.response?.data);
-					console.error("Error response status:", axiosError.response?.status);
-				}
-				return `Error loading content for ${path}: ${error instanceof Error ? error.message : String(error)}`;
-			}
+	const {
+		data: contentResponse,
+		error,
+		isLoading,
+	} = useGetDocumentContent(
+		activeFile ? { path: activeFile, kind: "local" } : undefined,
+		{
+			swr: {
+				enabled: !!activeFile,
+				revalidateOnFocus: false,
+				revalidateOnReconnect: false,
+			},
 		},
-		[],
 	);
 
 	useEffect(() => {
-		const openFile = async () => {
-			if (!activeFile) {
-				setContent("");
-				setLoading(false);
-				setIsDirty(false);
-				return;
-			}
-
-			setLoading(true);
+		if (contentResponse?.data.content !== undefined) {
+			setLocalContent(contentResponse.data.content);
 			setIsDirty(false);
+		}
+	}, [contentResponse]);
 
-			// Load content
-			const fileContent = await loadDocumentContent(activeFile);
-			setContent(fileContent);
-			setLoading(false);
-		};
+	useEffect(() => {
+		if (error) {
+			console.error("Failed to load document content:", error);
+			setLocalContent(
+				`Error loading content for ${activeFile}: ${error.message || String(error)}`,
+			);
+		}
+	}, [error, activeFile]);
 
-		openFile();
-	}, [activeFile, loadDocumentContent]);
+	useEffect(() => {
+		if (!activeFile) {
+			setLocalContent("");
+			setIsDirty(false);
+		}
+	}, [activeFile]);
 
 	const handleContentChange = (newContent: string) => {
-		setContent(newContent);
+		setLocalContent(newContent);
 		setIsDirty(true);
 	};
 
@@ -76,7 +70,7 @@ export function Editor({ activeFile }: EditorProps) {
 
 			{/* Editor Content */}
 			<div className="flex-1 overflow-hidden">
-				{loading ? (
+				{isLoading ? (
 					<div className="flex items-center justify-center h-full text-gray-500">
 						<div className="text-center">
 							<div className="text-4xl mb-4">⏳</div>
@@ -86,7 +80,7 @@ export function Editor({ activeFile }: EditorProps) {
 				) : activeFile ? (
 					<textarea
 						className="w-full h-full bg-gray-900 text-gray-100 p-4 font-mono text-sm resize-none border-none outline-none"
-						value={content}
+						value={localContent}
 						onChange={(e) => handleContentChange(e.target.value)}
 						placeholder="Start typing..."
 						spellCheck={false}

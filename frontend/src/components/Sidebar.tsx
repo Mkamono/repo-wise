@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { getDocuments } from "../api/backend";
+import { useCallback, useMemo, useState } from "react";
+import { useGetDocuments } from "../api/backend";
 import type { Document } from "../api/model";
 
 interface FileItem {
@@ -193,34 +193,26 @@ export function Sidebar({
 	activeFile,
 	onDirectorySelect,
 }: SidebarProps) {
-	const [documents, setDocuments] = useState<Document[]>([]);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const {
+		data: documentsResponse,
+		error,
+		isLoading,
+	} = useGetDocuments(
+		selectedDirectory ? { path: selectedDirectory, kind: "local" } : undefined,
+		{
+			swr: {
+				enabled: !!selectedDirectory,
+				revalidateOnFocus: false,
+				dedupingInterval: 30000,
+			},
+		},
+	);
 
-	const fetchDocuments = useCallback(async (path?: string) => {
-		if (!path) return;
-
-		try {
-			setLoading(true);
-			const response = await getDocuments({ path, kind: "local" });
-			setDocuments(response.data.documents || []);
-			setError(null);
-		} catch (err) {
-			console.error("Failed to fetch documents:", err);
-			setError("Failed to load documents");
-			setDocuments([]);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
-
-	useEffect(() => {
-		if (selectedDirectory) {
-			fetchDocuments(selectedDirectory);
-		}
-	}, [selectedDirectory, fetchDocuments]);
-
-	const fileTree = buildFileTree(documents, selectedDirectory);
+	const documents = documentsResponse?.data.documents || [];
+	const fileTree = useMemo(
+		() => buildFileTree(documents, selectedDirectory),
+		[documents, selectedDirectory],
+	);
 
 	return (
 		<div className="w-64 bg-gray-800 border-r border-gray-600 h-full overflow-y-auto">
@@ -257,16 +249,21 @@ export function Sidebar({
 						to browse documents
 					</div>
 				)}
-				{selectedDirectory && loading && (
+				{selectedDirectory && isLoading && (
 					<div className="text-gray-400 text-sm p-2">Loading documents...</div>
 				)}
 				{selectedDirectory && error && (
-					<div className="text-red-400 text-sm p-2">{error}</div>
+					<div className="text-red-400 text-sm p-2">
+						Failed to load documents
+					</div>
 				)}
-				{selectedDirectory && !loading && !error && documents.length === 0 && (
-					<div className="text-gray-400 text-sm p-2">No documents found</div>
-				)}
-				{selectedDirectory && !loading && !error && documents.length > 0 && (
+				{selectedDirectory &&
+					!isLoading &&
+					!error &&
+					documents.length === 0 && (
+						<div className="text-gray-400 text-sm p-2">No documents found</div>
+					)}
+				{selectedDirectory && !isLoading && !error && documents.length > 0 && (
 					<FileTree
 						items={fileTree}
 						onFileSelect={onFileSelect}

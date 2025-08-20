@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-import { getDirectory } from "../api/backend";
+import { useGetDirectory } from "../api/backend";
 import type { FileInfo } from "../api/model";
 
 interface DirectoryExplorerProps {
@@ -15,39 +14,27 @@ export function DirectoryExplorer({
 	currentPath = "/Users",
 	onPathChange,
 }: DirectoryExplorerProps) {
-	const [items, setItems] = useState<FileInfo[]>([]);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	const loadDirectory = useCallback(
-		async (path: string) => {
-			if (!path.trim()) return;
-
-			setLoading(true);
-			setError(null);
-
-			try {
-				const response = await getDirectory({ path, kind: "local" });
-				setItems(response.data.items || []);
-				onPathChange?.(path);
-			} catch (err) {
-				console.error("Failed to load directory:", err);
-				setError("Failed to load directory");
-				setItems([]);
-			} finally {
-				setLoading(false);
-			}
+	const {
+		data: directoryResponse,
+		error,
+		isLoading,
+		mutate,
+	} = useGetDirectory(
+		currentPath.trim() ? { path: currentPath, kind: "local" } : undefined,
+		{
+			swr: {
+				enabled: !!currentPath.trim(),
+				revalidateOnFocus: false,
+				dedupingInterval: 60000,
+			},
 		},
-		[onPathChange],
 	);
 
-	useEffect(() => {
-		loadDirectory(currentPath);
-	}, [currentPath, loadDirectory]);
+	const items: FileInfo[] = directoryResponse?.data.items || [];
 
 	const navigateToPath = (path: string) => {
 		const cleanPath = path.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
-		loadDirectory(cleanPath);
+		onPathChange?.(cleanPath);
 	};
 
 	const goUp = () => {
@@ -106,17 +93,17 @@ export function DirectoryExplorer({
 						type="text"
 						value={currentPath}
 						onChange={(e) => onPathChange?.(e.target.value)}
-						onKeyDown={(e) => e.key === "Enter" && loadDirectory(currentPath)}
+						onKeyDown={(e) => e.key === "Enter" && mutate()}
 						className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 						placeholder="/absolute/path/to/directory"
 					/>
 					<button
 						type="button"
-						onClick={() => loadDirectory(currentPath)}
-						disabled={loading}
+						onClick={() => mutate()}
+						disabled={isLoading}
 						className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium disabled:opacity-50"
 					>
-						{loading ? "..." : "Go"}
+						{isLoading ? "..." : "Go"}
 					</button>
 					<button
 						type="button"
@@ -217,17 +204,21 @@ export function DirectoryExplorer({
 
 			{/* Directory Contents */}
 			<div className="border border-gray-600 rounded-md max-h-96 overflow-y-auto bg-gray-700">
-				{loading && (
+				{isLoading && (
 					<div className="p-4 text-center text-gray-400">Loading...</div>
 				)}
 
-				{error && <div className="p-4 text-center text-red-400">{error}</div>}
+				{error && (
+					<div className="p-4 text-center text-red-400">
+						Failed to load directory
+					</div>
+				)}
 
-				{!loading && !error && items.length === 0 && (
+				{!isLoading && !error && items.length === 0 && (
 					<div className="p-4 text-center text-gray-400">Empty directory</div>
 				)}
 
-				{!loading && !error && items.length > 0 && (
+				{!isLoading && !error && items.length > 0 && (
 					<div className="divide-y divide-gray-600">
 						{items
 							.sort((a, b) => {
