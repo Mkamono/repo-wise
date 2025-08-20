@@ -17,15 +17,15 @@ func (p *local) GetDocuments(ctx context.Context, path string, condition handler
 		path string
 		info os.FileInfo
 	}
-	
+
 	// 適切なワーカー数（IOバウンドなので控えめに）
 	numWorkers := 8
 	fileChan := make(chan fileInfo, 1000)
 	resultChan := make(chan domain.Document, 100)
-	
+
 	var wg sync.WaitGroup
 	var matchedFiles []domain.Document
-	
+
 	// ワーカーgoroutineを起動（固定数でリソース使用を制御）
 	for range numWorkers {
 		wg.Add(1)
@@ -37,7 +37,7 @@ func (p *local) GetDocuments(ctx context.Context, path string, condition handler
 					return
 				default:
 				}
-				
+
 				// 条件チェック（CPU処理）
 				if matchesCondition(file.path, file.info, condition) {
 					relPath, _ := filepath.Rel(path, file.path)
@@ -53,7 +53,7 @@ func (p *local) GetDocuments(ctx context.Context, path string, condition handler
 			}
 		}()
 	}
-	
+
 	// 結果収集goroutine
 	done := make(chan bool)
 	go func() {
@@ -62,7 +62,7 @@ func (p *local) GetDocuments(ctx context.Context, path string, condition handler
 			matchedFiles = append(matchedFiles, doc)
 		}
 	}()
-	
+
 	// ファイルシステム走査（単一goroutineでIO最適化）
 	go func() {
 		defer close(fileChan)
@@ -70,7 +70,7 @@ func (p *local) GetDocuments(ctx context.Context, path string, condition handler
 			if err != nil {
 				return err
 			}
-			
+
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -93,20 +93,20 @@ func (p *local) GetDocuments(ctx context.Context, path string, condition handler
 			case <-ctx.Done():
 				return ctx.Err()
 			}
-			
+
 			return nil
 		})
 	}()
-	
+
 	// ワーカー完了待機goroutine
 	go func() {
 		wg.Wait()
 		close(resultChan)
 	}()
-	
+
 	// 結果収集完了を待機
 	<-done
-	
+
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
