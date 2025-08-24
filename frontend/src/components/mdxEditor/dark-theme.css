@@ -1,0 +1,252 @@
+/* MDXEditor Dark Theme CSS */
+/* Based on Radix UI colors - using slate for base and blue for accents to match the app's gray-900 background */
+
+.mdxeditor-dark-theme {
+	/* Base colors using slate palette for dark theme */
+	--baseBase: #0f0f11;
+	--baseBgSubtle: #18181b;
+	--baseBg: #1e1e1e;
+	--baseBgHover: #262626;
+	--baseBgActive: #2d2d2d;
+	--baseLine: #3f3f3f;
+	--baseBorder: #4a4a4a;
+	--baseBorderHover: #5a5a5a;
+	--baseSolid: #6a6a6a;
+	--baseSolidHover: #7a7a7a;
+	--baseText: #e5e5e5;
+	--baseTextContrast: #fafafa;
+
+	/* Accent colors using blue palette for interactive elements */
+	--accentBase: #0f1419;
+	--accentBgSubtle: #111827;
+	--accentBg: #1f2937;
+	--accentBgHover: #374151;
+	--accentBgActive: #4b5563;
+	--accentLine: #6b7280;
+	--accentBorder: #9ca3af;
+	--accentBorderHover: #d1d5db;
+	--accentSolid: #3b82f6;
+	--accentSolidHover: #2563eb;
+	--accentText: #60a5fa;
+	--accentTextContrast: #ffffff;
+
+	/* Admonition colors for callouts */
+	--admonitionTipBg: #0f172a;
+	--admonitionTipBorder: #1e293b;
+
+	--admonitionInfoBg: #064e3b;
+	--admonitionInfoBorder: #047857;
+
+	--admonitionCautionBg: #451a03;
+	--admonitionCautionBorder: #d97706;
+
+	--admonitionDangerBg: #7f1d1d;
+	--admonitionDangerBorder: #dc2626;
+
+	--admonitionNoteBg: #1f2937;
+	--admonitionNoteBorder: #6b7280;
+
+	/* Typography */
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas,
+		"Liberation Mono", "Courier New", monospace;
+
+	/* Main colors */
+	color: var(--baseText);
+	--basePageBg: #111827;
+	background: var(--basePageBg);
+
+	/* Ensure proper height and overflow handling */
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Specific overrides for better integration with the app's dark theme */
+.mdxeditor-dark-theme .mdxeditor {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.mdxeditor-dark-theme .mdxeditor-toolbar {
+	background-color: #1f2937;
+	border-bottom: 1px solid #374151;
+	flex-shrink: 0;
+}
+
+.mdxeditor-dark-theme .mdxeditor-root-contenteditable {
+	background-color: #111827;
+	color: #f3f4f6;
+	border: none;
+	outline: none;
+	overflow-y: auto;
+	flex-grow: 1;
+	min-height: 0;
+}
+
+/* Code block styling */
+.mdxeditor-dark-theme .cm-editor {
+	background-color: #0f172a;
+}
+
+.mdxeditor-dark-theme .cm-editor .cm-content {
+	background-color: #0f172a;
+	color: #f1f5f9;
+}
+
+/* CodeMirror line numbers styling */
+.mdxeditor-dark-theme .cm-editor .cm-lineNumbers {
+	background-color: transparent;
+	color: #475569;
+	border-right: none;
+}
+
+.mdxeditor-dark-theme .cm-editor .cm-lineNumbers .cm-gutterElement {
+	color: #475569;
+	font-size: 0.75rem;
+	padding: 0 6px;
+	text-align: right;
+	min-width: 24px;
+}
+
+.mdxeditor-dark-theme .cm-editor .cm-gutters {
+	background-color: transparent;
+	border-right: none;
+	padding-right: 8px;
+}
+
+/* Fold gutter styling */
+.mdxeditor-dark-theme .cm-editor .cm-foldGutter {
+	background-color: transparent;
+	width: 16px;
+}
+
+.mdxeditor-dark-theme .cm-editor .cm-foldGutter .cm-gutterElement {
+	color: #475569;
+	text-align: center;
+	padding: 0;
+	font-size: 0.75rem;
+}
+
+/* Active line gutter */
+.mdxeditor-dark-theme .cm-editor .cm-activeLineGutter {
+	background-color: transparent;
+	color: #64748b;
+}
+
+/* Cursor styling in code blocks */
+.mdxeditor-dark-theme .cm-editor .cm-cursor,
+.mdxeditor-dark-theme .cm-editor .cm-cursor-primary {
+	border-left-color: #60a5fa;
+	border-left-width: 2px;
+}
+
+.mdxeditor-dark-theme .cm-editor .cm-focused .cm-cursor,
+.mdxeditor-dark-theme .cm-editor .cm-focused .cm-cursor-primary {
+	border-left-color: #3b82f6;
+	border-left-width: 2px;
+}
+
+/* Selection styling in code blocks */
+.mdxeditor-dark-theme .cm-editor .cm-selectionBackground {
+	background-color: #3b82f6 !important;
+	opacity: 0.3;
+}
+
+/* Matching bracket styling */
+.mdxeditor-dark-theme .cm-editor .cm-matchingBracket {
+	background-color: #374151 !important;
+	color: #60a5fa !important;
+	border-radius: 2px;
+	outline: none;
+}
+
+.mdxeditor-dark-theme .cm-editor .cm-nonmatchingBracket {
+	background-color: #7f1d1d !important;
+	color: #fca5a5 !important;
+	border-radius: 2px;
+	outline: none;
+}
+
+/* Table styling */
+.mdxeditor-dark-theme table {
+	border-color: #374151;
+}
+
+.mdxeditor-dark-theme th,
+.mdxeditor-dark-theme td {
+	border-color: #374151;
+	background-color: transparent;
+}
+
+/* Link styling */
+.mdxeditor-dark-theme a {
+	color: #60a5fa;
+}
+
+.mdxeditor-dark-theme a:hover {
+	color: #93c5fd;
+}
+
+/* Blockquote styling */
+.mdxeditor-dark-theme blockquote {
+	border-left: 4px solid #6b7280;
+	background-color: #1f2937;
+	color: #d1d5db;
+}
+
+/* Selection styling */
+.mdxeditor-dark-theme .mdxeditor-root-contenteditable ::selection {
+	background-color: #3b82f6;
+	color: white;
+}
+
+/* Placeholder text */
+.mdxeditor-dark-theme .mdxeditor-root-contenteditable .Placeholder__root {
+	color: #9ca3af;
+}
+
+/* Heading sizes - more moderate sizing */
+.mdxeditor-dark-theme h1 {
+	font-size: 1.875rem; /* 30px */
+	font-weight: 700;
+	line-height: 1.2;
+	margin: 1.25rem 0 0.75rem 0;
+}
+
+.mdxeditor-dark-theme h2 {
+	font-size: 1.5rem; /* 24px */
+	font-weight: 600;
+	line-height: 1.3;
+	margin: 1rem 0 0.5rem 0;
+}
+
+.mdxeditor-dark-theme h3 {
+	font-size: 1.25rem; /* 20px */
+	font-weight: 600;
+	line-height: 1.4;
+	margin: 0.875rem 0 0.5rem 0;
+}
+
+.mdxeditor-dark-theme h4 {
+	font-size: 1.125rem; /* 18px */
+	font-weight: 600;
+	line-height: 1.5;
+	margin: 0.75rem 0 0.375rem 0;
+}
+
+.mdxeditor-dark-theme h5 {
+	font-size: 1rem; /* 16px */
+	font-weight: 600;
+	line-height: 1.5;
+	margin: 0.625rem 0 0.25rem 0;
+}
+
+.mdxeditor-dark-theme h6 {
+	font-size: 0.875rem; /* 14px */
+	font-weight: 600;
+	line-height: 1.5;
+	margin: 0.5rem 0 0.25rem 0;
+}

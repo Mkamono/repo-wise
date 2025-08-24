@@ -1,5 +1,11 @@
-import { useEffect, useState } from "react";
-import { useDeleteDocument, useGetDocumentContent } from "../api/backend";
+import type { MDXEditorMethods } from "@mdxeditor/editor";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	useDeleteDocument,
+	useGetDocumentContent,
+	usePutDocumentContent,
+} from "../api/backend";
+import { MDXEditorWrapper } from "./mdxEditor/Editor";
 
 interface EditorProps {
 	activeFile: string | null;
@@ -10,6 +16,7 @@ export function Editor({ activeFile, onFileDeleted }: EditorProps) {
 	const [isDirty, setIsDirty] = useState<boolean>(false);
 	const [localContent, setLocalContent] = useState<string>("");
 	const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+	const mdxEditorRef = useRef<MDXEditorMethods>(null);
 
 	const {
 		data: contentResponse,
@@ -29,9 +36,15 @@ export function Editor({ activeFile, onFileDeleted }: EditorProps) {
 	const { trigger: deleteDocument, isMutating: isDeleting } =
 		useDeleteDocument();
 
+	const { trigger: updateDocumentContent, isMutating: isSaving } =
+		usePutDocumentContent(
+			activeFile ? { path: activeFile, kind: "local" } : undefined,
+		);
+
 	useEffect(() => {
 		if (contentResponse?.data.content !== undefined) {
 			setLocalContent(contentResponse.data.content);
+			mdxEditorRef.current?.setMarkdown(contentResponse.data.content);
 			setIsDirty(false);
 		}
 	}, [contentResponse]);
@@ -48,6 +61,7 @@ export function Editor({ activeFile, onFileDeleted }: EditorProps) {
 	useEffect(() => {
 		if (!activeFile) {
 			setLocalContent("");
+			mdxEditorRef.current?.setMarkdown("");
 			setIsDirty(false);
 		}
 	}, [activeFile]);
@@ -82,6 +96,84 @@ export function Editor({ activeFile, onFileDeleted }: EditorProps) {
 		setShowDeleteDialog(false);
 	};
 
+	const formatContent = useCallback((content: string): string => {
+		// HTMLエンティティをデコード
+		let formatted = content
+			.replace(/&#x20;/g, " ") // スペース
+			.replace(/&#xa0;/g, "\u00A0") // ノンブレークスペース
+			.replace(/&nbsp;/g, "\u00A0") // ノンブレークスペース
+			.replace(/&amp;/g, "&") // アンパサンド
+			.replace(/&lt;/g, "<") // 小なり
+			.replace(/&gt;/g, ">") // 大なり
+			.replace(/&quot;/g, '"') // ダブルクォート
+			.replace(/&#x27;/g, "'"); // シングルクォート
+
+		// 連続する空行を最大2つまでに制限
+		formatted = formatted.replace(/\n{3,}/g, "\n\n");
+
+		// 行の末尾の不要な空白を削除
+		formatted = formatted.replace(/[ \t\u00A0]+$/gm, "");
+
+		// ファイルの先頭と末尾の不要な改行を削除
+		formatted = formatted.replace(/^\n+/, "").replace(/\n+$/, "");
+
+		// 末尾に改行を1つ確保（Markdownファイルの標準として）
+		formatted = `${formatted}\n`;
+
+		return formatted;
+	}, []);
+
+	const handleSave = useCallback(async () => {
+		if (!activeFile || !isDirty) return;
+
+		try {
+			const contentToSave = formatContent(localContent);
+
+			await updateDocumentContent({
+				content: contentToSave,
+			});
+			setIsDirty(false);
+		} catch (error) {
+			console.error("Failed to save document:", error);
+			alert("Failed to save document");
+		}
+	}, [activeFile, isDirty, localContent, updateDocumentContent, formatContent]);
+
+	// Ctrl/Cmd+S キーボードショートカット
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (
+				(event.ctrlKey || event.metaKey) &&
+				(event.key === "s" || event.key === "S" || event.code === "KeyS")
+			) {
+				// 即座にイベントを停止
+				event.preventDefault();
+				event.stopPropagation();
+				event.stopImmediatePropagation();
+
+				// 非同期で保存処理を実行（イベント処理の完全な停止のため）
+				setTimeout(() => {
+					handleSave();
+				}, 0);
+
+				return false;
+			}
+		};
+
+		// 可能な限り早い段階でイベントを捕獲
+		const options = { capture: true, passive: false };
+
+		window.addEventListener("keydown", handleKeyDown, options);
+		document.addEventListener("keydown", handleKeyDown, options);
+		document.body.addEventListener("keydown", handleKeyDown, options);
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown, options);
+			document.removeEventListener("keydown", handleKeyDown, options);
+			document.body.removeEventListener("keydown", handleKeyDown, options);
+		};
+	}, [handleSave]);
+
 	return (
 		<div className="flex-1 flex flex-col bg-gray-900">
 			{/* File Header */}
@@ -92,7 +184,10 @@ export function Editor({ activeFile, onFileDeleted }: EditorProps) {
 						<span className="text-sm font-medium text-gray-200">
 							{activeFile.split("/").pop() || activeFile}
 						</span>
-						{isDirty && <span className="text-orange-400 text-xs">●</span>}
+						{isSaving && <span className="text-blue-400 text-xs">💾</span>}
+						{isDirty && !isSaving && (
+							<span className="text-orange-400 text-xs">●</span>
+						)}
 					</div>
 					<div className="flex items-center space-x-3">
 						<div className="text-xs text-gray-400 font-mono">{activeFile}</div>
@@ -119,12 +214,12 @@ export function Editor({ activeFile, onFileDeleted }: EditorProps) {
 						</div>
 					</div>
 				) : activeFile ? (
-					<textarea
-						className="w-full h-full bg-gray-900 text-gray-100 p-4 font-mono text-sm resize-none border-none outline-none"
-						value={localContent}
-						onChange={(e) => handleContentChange(e.target.value)}
+					<MDXEditorWrapper
+						ref={mdxEditorRef}
+						className="w-full h-full [&_.mdxeditor]:h-full"
+						markdown={localContent}
+						onChange={handleContentChange}
 						placeholder="Start typing..."
-						spellCheck={false}
 					/>
 				) : (
 					<div className="flex items-center justify-center h-full text-gray-500">
